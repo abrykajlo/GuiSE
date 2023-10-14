@@ -1,0 +1,1 @@
+add_executable(GuiSE main.cpp chunk.cpp chunk.h value.cpp value.h vm.cpp vm.h)

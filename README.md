@@ -1,1 +1,1 @@
-# GuiSE
+# GuiSE - Gui Scripting Engine

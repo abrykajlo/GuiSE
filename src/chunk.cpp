@@ -11,42 +11,44 @@ int simpleInstruction(const char *name, int offset) {
 
 using namespace GuiSE;
 
-void Chunk::write(u8 byte) { mCode.push_back(byte); }
+void Chunk::write(u8 byte) { _code.push_back(byte); }
 
 std::optional<u8> Chunk::read(int offset) {
-  if (offset < mCode.size()) {
-    return mCode[offset];
+  if (offset < _code.size()) {
+    return _code[offset];
   }
 
   return {};
 }
 
 const u8 *Chunk::getCodePtr() const {
-  return mCode.empty() ? nullptr : mCode.data();
+  return _code.empty() ? nullptr : _code.data();
 }
 
 int Chunk::addConstant(Value value) {
-  mConstants.push_back(value);
-  return mConstants.size() - 1;
+  _constants.push_back(value);
+  return _constants.size() - 1;
 }
 
-Value Chunk::getConstant(int index) const { return mConstants[index]; }
+Value Chunk::getConstant(int index) const { return _constants[index]; }
 
 void Chunk::disassemble(const char *name) const {
   printf("== %s ==\n", name);
 
-  for (int offset = 0; offset < mCode.size();) {
-    offset = disassembleInstruction(offset);
+  for (int offset = 0; offset < _code.size();) {
+    offset = _disassembleInstruction(offset);
   }
 }
 
-int Chunk::disassembleInstruction(int offset) const {
+int Chunk::_disassembleInstruction(int offset) const {
   printf("%04d ", offset);
 
-  u8 instruction = mCode[offset];
+  u8 instruction = _code[offset];
   switch (static_cast<OpCode>(instruction)) {
+  case OpCode::LINE:
+    return _lineInstruction("LINE", offset);
   case OpCode::CONSTANT:
-    return constantInstruction("CONSTANT", offset);
+    return _constantInstruction("CONSTANT", offset);
   case OpCode::RETURN:
     return simpleInstruction("RETURN", offset);
   default:
@@ -55,10 +57,16 @@ int Chunk::disassembleInstruction(int offset) const {
   }
 }
 
-int Chunk::constantInstruction(const char *name, int offset) const {
-  u8 constant = mCode[offset + 1];
+int Chunk::_constantInstruction(const char *name, int offset) const {
+  u8 constant = _code[offset + 1];
   printf("%-16s %4d '", name, constant);
-  printValue(mConstants[constant]);
+  printValue(_constants[constant]);
   printf("'\n");
+  return offset + 2;
+}
+
+int Chunk::_lineInstruction(const char *name, int offset) const {
+  u8 line = _code[offset + 1];
+  printf("%s %d\n", name, line);
   return offset + 2;
 }

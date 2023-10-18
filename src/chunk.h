@@ -21,10 +21,11 @@ public:
   void disassemble(const char *name) const;
 
 private:
-  int disassembleInstruction(int offset) const;
-  int constantInstruction(const char *name, int offset) const;
+  int _disassembleInstruction(int offset) const;
+  int _constantInstruction(const char *name, int offset) const;
+  int _lineInstruction(const char *name, int offset) const;
 
-  std::vector<u8> mCode;
-  ValueArray mConstants;
+  std::vector<u8> _code;
+  ValueArray _constants;
 };
 } // namespace GuiSE

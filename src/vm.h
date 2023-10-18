@@ -10,12 +10,10 @@ public:
   InterpretResult interpret(Chunk *chunk);
   InterpretResult run();
 
-  template <class T> inline T readByte() { return static_cast<T>(*mIP++); }
-
-  inline Value readConstant() { return mChunk->getConstant(readByte<u8>()); }
+  inline u8 read() { return *_ip++; }
 
 private:
-  Chunk *mChunk = nullptr;
-  const u8 *mIP = nullptr;
+  Chunk *_chunk = nullptr;
+  const u8 *_ip = nullptr;
 };
 } // namespace GuiSE

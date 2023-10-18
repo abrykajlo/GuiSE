@@ -34,10 +34,13 @@ template <typename Reader> class OpCodeReader {
 public:
   OpCodeReader(Reader &reader) : _reader(reader) {}
 
-  OpCode read() {}
+  OpCode read() { return static_cast<OpCode>(_read()); }
+
+  template <OpCode I, _MATCH_OPS(I, u8)> void read(u8 &arg1) { arg1 = _read(); }
 
 private:
-  u64 offset = 0;
+  u8 _read() { return _reader.read(); }
+
   Reader &_reader;
 };
 

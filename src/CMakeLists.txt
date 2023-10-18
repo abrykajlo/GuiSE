@@ -1,1 +1,10 @@
-add_executable(GuiSE main.cpp chunk.cpp chunk.h value.cpp value.h vm.cpp vm.h)
+include(util)
+
+MAKE_SOURCES(
+    GUISE_SOURCES
+        H_CPP chunk value vm
+        H opcode types
+)
+
+add_executable(GuiSE main.cpp ${GUISE_SOURCES})
+set_target_properties(GuiSE PROPERTIES CXX_STANDARD 17)

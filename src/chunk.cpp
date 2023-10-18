@@ -1,5 +1,7 @@
 #include "chunk.h"
 
+#include "opcode.h"
+
 namespace {
 	int simpleInstruction(const char* name, int offset) {
 		printf("%s\n", name);
@@ -7,18 +9,31 @@ namespace {
 	}
 }
 
-void Chunk::write(uint8_t byte, int line) {
+using namespace GuiSE;
+
+void Chunk::write(u8 byte) {
 	mCode.push_back(byte);
-	mLines.push_back(line);
 }
 
-void Chunk::write(OpCode opcode, int line) {
-	write(static_cast<uint8_t>(opcode), line);
+std::optional<u8> Chunk::read(int offset) {
+	if (offset < mCode.size()) {
+		return &mCode[offset];
+	}
+
+	return nullptr;
+}
+
+const u8* Chunk::getCodePtr() const {
+	return mCode.empty() ? nullptr : mCode.data();
 }
 
 int Chunk::addConstant(Value value) {
 	mConstants.push_back(value);
 	return mConstants.size() - 1;
+}
+
+Value Chunk::getConstant(int index) const {
+	return mConstants[index];
 }
 
 void Chunk::disassemble(const char* name) const {
@@ -31,13 +46,8 @@ void Chunk::disassemble(const char* name) const {
 
 int Chunk::disassembleInstruction(int offset) const {
 	printf("%04d ", offset);
-	if (offset > 0 && mLines[offset] == mLines[offset - 1]) {
-		printf("   | ");
-	} else {
-		printf("%4d ", mLines[offset]);
-	}
 
-	uint8_t instruction = mCode[offset];
+	u8 instruction = mCode[offset];
 	switch (static_cast<OpCode>(instruction)) {
 	case OpCode::CONSTANT:
 		return constantInstruction("CONSTANT", offset);
@@ -50,7 +60,7 @@ int Chunk::disassembleInstruction(int offset) const {
 }
 
 int Chunk::constantInstruction(const char* name, int offset) const {
-	uint8_t constant = mCode[offset + 1];
+	u8 constant = mCode[offset + 1];
 	printf("%-16s %4d '", name, constant);
 	printValue(mConstants[constant]);
 	printf("'\n");

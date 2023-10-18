@@ -1,28 +1,29 @@
 #pragma once
 
+#include "types.h"
 #include "value.h"
 
 #include <cstdint>
+#include <optional>
 #include <vector>
 
-enum class OpCode : uint8_t {
-	CONSTANT,
-	RETURN
-};
-
+namespace GuiSE {
 class Chunk {
 public:
-	void write(uint8_t byte, int line);
-	void write(OpCode opcode, int line);
+	void write(u8 byte);
+	std::optional<u8> read(int offset);
+
+	const u8* getCodePtr() const;
 
 	int addConstant(Value value);
+	Value getConstant(int index) const;
 
 	void disassemble(const char* name) const;
 private:
 	int disassembleInstruction(int offset) const;
 	int constantInstruction(const char* name, int offset) const;
 
-	std::vector<uint8_t> mCode;
-	std::vector<int> mLines;
+	std::vector<u8> mCode;
 	ValueArray mConstants;
 };
+}

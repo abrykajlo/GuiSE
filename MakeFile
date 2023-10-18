@@ -1,0 +1,5 @@
+build:
+	cmake -B_build .
+
+format:
+	clang-format -i src/*

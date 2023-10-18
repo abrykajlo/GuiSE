@@ -5,76 +5,63 @@
 #include <cstdint>
 #include <functional>
 
-#define _OPERANDS(OPCODE, ...) \
-	template <> \
-	struct Operands<OpCode::OPCODE, __VA_ARGS__> : std::true_type {};
+#define _OPERANDS(OPCODE, ...)                                                 \
+  template <> struct Operands<OpCode::OPCODE, __VA_ARGS__> : std::true_type {};
 
-#define _MATCH_OPS(OPTYPE, ...) \
-	typename = std::enable_if_t<Operands<OPTYPE, __VA_ARGS__>::value>
+#define _MATCH_OPS(OPCODE, ...)                                                \
+  typename = std::enable_if_t<Operands<OPCODE, __VA_ARGS__>::value>
 
 namespace GuiSE {
-	enum class OpCode : u8 {
-		NOOP,
-		LINE,
-		CONSTANT,
-		RETURN,
-	};
+enum class OpCode : u8 {
+  NOOP,
+  LINE,
+  CONSTANT,
+  RETURN,
+};
 
-	namespace internal {
-		template <OpCode I, typename ...T>
-		struct Operands : std::false_type {};
+namespace internal {
+template <OpCode I, typename... T> struct Operands : std::false_type {};
 
-		_OPERANDS(NOOP)
-		_OPERANDS(RETURN)
-		_OPERANDS(LINE, u8)
-		_OPERANDS(CONSTANT, u8)
-	}
+_OPERANDS(NOOP)
+_OPERANDS(RETURN)
+_OPERANDS(LINE, u8)
+_OPERANDS(CONSTANT, u8)
+} // namespace internal
 
-	using namespace internal;
+using namespace internal;
 
-	template <typename Reader>
-	class OpCodeReader {
-	public:
-		OpCodeReader(Reader& reader) : _reader(reader) {}
+template <typename Reader> class OpCodeReader {
+public:
+  OpCodeReader(Reader &reader) : _reader(reader) {}
 
-		OpCode read() {
+  OpCode read() {}
 
-		}
+private:
+  u64 offset = 0;
+  Reader &_reader;
+};
 
-	private:
-		u64 offset = 0;
-		Reader& _reader;
-	};
+template <typename Writer> class OpCodeWriter {
+public:
+  OpCodeWriter(Writer &writer) : _writer(writer) {}
 
-	template <typename Writer>
-	class OpCodeWriter {
-	public:
-		OpCodeWriter(Writer& writer) : _writer(writer) {}
+  template <OpCode I, _MATCH_OPS(I)> void write() { _write<I>(); }
 
-		template <OpCode I, _MATCH_OPS(I)>
-		void write() {
-			_write<I>();
-		}
+  template <OpCode I, _MATCH_OPS(I, u8)> void write(u8 byte) {
+    _write<I>();
+    _write(byte);
+  }
 
-		template <OpCode I, _MATCH_OPS(I, u8)>
-		void write(u8 byte) {
-			_write<I>();
-			_write(byte);
-		}
+private:
+  template <OpCode I> inline void _write() {
+    _writer.write(static_cast<u8>(I));
+  }
 
-	private:
-		template <OpCode I>
-		inline void _write() {
-			_writer.write(static_cast<u8>(I));
-		}
+  inline void _write(u8 byte) { _writer.write(byte); }
 
-		inline void _write(u8 byte) {
-			_writer.write(byte);
-		}
-
-		Writer& _writer;
-	};
-}
+  Writer &_writer;
+};
+} // namespace GuiSE
 
 #undef _MATCH_OPS
 #undef _OPERANDS

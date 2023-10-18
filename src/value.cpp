@@ -1,6 +1,5 @@
 #include "value.h"
 
-void printValue(Value value)
-{
-	printf("%g", value);
-}
+using namespace GuiSE;
+
+void GuiSE::printValue(Value value) { printf("%g", value); }

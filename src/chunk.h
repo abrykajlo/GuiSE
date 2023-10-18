@@ -10,20 +10,21 @@
 namespace GuiSE {
 class Chunk {
 public:
-	void write(u8 byte);
-	std::optional<u8> read(int offset);
+  void write(u8 byte);
+  std::optional<u8> read(int offset);
 
-	const u8* getCodePtr() const;
+  const u8 *getCodePtr() const;
 
-	int addConstant(Value value);
-	Value getConstant(int index) const;
+  int addConstant(Value value);
+  Value getConstant(int index) const;
 
-	void disassemble(const char* name) const;
+  void disassemble(const char *name) const;
+
 private:
-	int disassembleInstruction(int offset) const;
-	int constantInstruction(const char* name, int offset) const;
+  int disassembleInstruction(int offset) const;
+  int constantInstruction(const char *name, int offset) const;
 
-	std::vector<u8> mCode;
-	ValueArray mConstants;
+  std::vector<u8> mCode;
+  ValueArray mConstants;
 };
-}
+} // namespace GuiSE

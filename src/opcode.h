@@ -16,6 +16,7 @@ enum class OpCode : u8 {
   NOOP,
   LINE,
   CONSTANT,
+  NEGATE,
   RETURN,
 };
 
@@ -24,6 +25,7 @@ template <OpCode I, typename... T> struct Operands : std::false_type {};
 
 _OPERANDS(NOOP)
 _OPERANDS(RETURN)
+_OPERANDS(NEGATE)
 _OPERANDS(LINE, u8)
 _OPERANDS(CONSTANT, u8)
 } // namespace internal

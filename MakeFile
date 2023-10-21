@@ -2,4 +2,8 @@ build:
 	cmake -B_build .
 
 format:
-	clang-format -i src/*
+	clang-format -i src/*.h
+	clang-format -i src/*.cpp
+
+tidy:
+	clang-tidy src/*.cpp

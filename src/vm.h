@@ -1,27 +1,29 @@
 #pragma once
 
-#include "chunk.h"
+#include "byte_code.h"
 
 #define STACK_MAX 256
 
 namespace GuiSE {
-enum class InterpretResult { OK, COMPILE_ERROR, RUNTIME_ERROR };
+enum class InterpretResult { Ok, CompileError, RuntimeError };
 
 class VM {
 public:
-  InterpretResult interpret(Chunk *chunk);
-  InterpretResult run();
-
-  inline u8 read() { return *_ip++; }
+  InterpretResult Interpret(ByteCode *byte_code);
+  InterpretResult Run();
 
 private:
-  void resetStack();
-  void push(Value value);
-  Value pop();
+	template <OpCode O> inline void _read() { _ip += sizeof(Instruction<O>); }
 
-  Chunk *_chunk = nullptr;
+  inline auto _peek() { return reinterpret_cast<const InstructionSet *>(_ip); }
+
+  void _reset_stack();
+  void _push(f64 value);
+  f64 _pop();
+
+  ByteCode *_byte_code = nullptr;
   const u8 *_ip = nullptr;
-  Value _stack[STACK_MAX];
-  Value *_stackTop;
+  u8 _stack[STACK_MAX];
+  u8 *_stack_top;
 };
 } // namespace GuiSE

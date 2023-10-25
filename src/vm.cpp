@@ -6,6 +6,13 @@
   case OpCode::OPCODE:                                                         \
     _read<OpCode::OPCODE>();
 
+#define _BINARY_OP(OP)                                                         \
+  {                                                                            \
+    f64 b = _pop();                                                            \
+    f64 a = _pop();                                                            \
+    _push(a OP b);                                                             \
+  }
+
 using namespace GuiSE;
 
 InterpretResult VM::Interpret(ByteCode *ByteCode) {
@@ -28,9 +35,15 @@ InterpretResult VM::Run() {
         break;
       }
       _RUN_CASE(Add) {
-        auto b = _pop();
-        auto a = _pop();
-        _push(a + b);
+        _BINARY_OP(+)
+        break;
+      }
+      _RUN_CASE(Multiply) {
+        _BINARY_OP(*)
+        break;
+      }
+      _RUN_CASE(Divide) {
+        _BINARY_OP(/)
         break;
       }
       _RUN_CASE(Return) { return InterpretResult::Ok; }

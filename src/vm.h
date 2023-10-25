@@ -13,7 +13,7 @@ public:
   InterpretResult Run();
 
 private:
-	template <OpCode O> inline void _read() { _ip += sizeof(Instruction<O>); }
+  template <OpCode O> inline void _read() { _ip += sizeof(Instruction<O>); }
 
   inline auto _peek() { return reinterpret_cast<const InstructionSet *>(_ip); }
 

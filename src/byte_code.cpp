@@ -33,6 +33,10 @@ int ByteCode::_disassemble_instruction(int offset) const {
     return _push_instruction("PUSH", instruction_set->op_push, offset);
   case OpCode::Add:
     return simple_instruction("ADD", offset);
+  case OpCode::Multiply:
+    return simple_instruction("MULTIPLY", offset);
+  case OpCode::Divide:
+    return simple_instruction("DIVIDE", offset);
   case OpCode::Negate:
     return simple_instruction("NEGATE", offset);
   case OpCode::Return:

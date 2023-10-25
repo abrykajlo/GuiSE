@@ -10,6 +10,8 @@ enum class OpCode : u8 {
   NoOp,
   Push,
   Add,
+  Multiply,
+  Divide,
   Negate,
   Return,
 };
@@ -30,6 +32,8 @@ union InstructionSet {
   Instruction<OpCode::NoOp> no_op;
   Instruction<OpCode::Push> op_push;
   Instruction<OpCode::Add> op_add;
+  Instruction<OpCode::Multiply> op_multiply;
+  Instruction<OpCode::Divide> op_divide;
   Instruction<OpCode::Negate> op_negate;
   Instruction<OpCode::Return> op_return;
 };

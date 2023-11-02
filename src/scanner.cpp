@@ -171,6 +171,8 @@ TokenType Scanner::_identifier_type() {
   switch (_start[0]) {
   case 'a':
     return _check_keyword(1, 2, "nd", TokenType::And);
+  case 'b':
+    return _check_keyword(1, 3, "ool", TokenType::BoolType);
   case 'c':
     return _check_keyword(1, 3, "mpt", TokenType::Cmpt);
   case 'e':
@@ -189,8 +191,12 @@ TokenType Scanner::_identifier_type() {
     break;
   case 'i':
     return _check_keyword(1, 1, "f", TokenType::If);
+  case 'n':
+    return _check_keyword(1, 5, "umber", TokenType::NumberType);
   case 'o':
     return _check_keyword(1, 1, "r", TokenType::Or);
+  case 's':
+    return _check_keyword(1, 2, "tr", TokenType::StrType);
   case 'r':
     return _check_keyword(1, 5, "eturn", TokenType::Return);
   case 't':

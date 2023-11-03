@@ -52,6 +52,8 @@ Token Scanner::ScanToken() {
     return _make_token(TokenType::Slash);
   case '*':
     return _make_token(TokenType::Star);
+  case ',':
+    return _make_token(TokenType::Comma);
   case ':':
     return _make_token(TokenType::Colon);
   case ';':

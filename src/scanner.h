@@ -16,6 +16,7 @@ enum class TokenType {
   Plus,
   Slash,
   Star,
+  Comma,
   Colon,
   SemiColon,
   // one or two character tokens
@@ -47,7 +48,7 @@ enum class TokenType {
   True,
   Type,
   While,
-
+  // terminating tokens
   Error,
   Eof
 };

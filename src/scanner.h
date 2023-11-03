@@ -41,6 +41,7 @@ enum class TokenType {
   False,
   Fn,
   For,
+  Log,
   NumberType,
   Or,
   StrType,

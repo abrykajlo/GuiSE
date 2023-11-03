@@ -193,6 +193,8 @@ TokenType Scanner::_identifier_type() {
     break;
   case 'i':
     return _check_keyword(1, 1, "f", TokenType::If);
+  case 'l':
+    return _check_keyword(1, 2, "og", TokenType::Log);
   case 'n':
     return _check_keyword(1, 5, "umber", TokenType::NumberType);
   case 'o':

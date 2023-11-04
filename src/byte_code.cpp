@@ -11,7 +11,7 @@ int simple_instruction(const char *name, int offset) {
 
 using namespace GuiSE;
 
-const u8 *ByteCode::GetByteCodePtr() const {
+const uint8_t *ByteCode::GetByteCodePtr() const {
   return _byte_code.empty() ? nullptr : _byte_code.data();
 }
 

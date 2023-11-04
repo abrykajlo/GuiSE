@@ -17,7 +17,7 @@ public:
     }
   }
 
-  const u8 *GetByteCodePtr() const;
+  const uint8_t *GetByteCodePtr() const;
 
   void Disassemble(const char *name) const;
 
@@ -27,6 +27,6 @@ private:
                         const Instruction<OpCode::Push> &instruction,
                         int offset) const;
 
-  std::vector<u8> _byte_code;
+  std::vector<uint8_t> _byte_code;
 };
 } // namespace GuiSE

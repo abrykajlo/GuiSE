@@ -1,5 +1,6 @@
 #include "vm.h"
 
+#include "compiler.h"
 #include "opcode.h"
 
 #define _RUN_CASE(OPCODE)                                                      \
@@ -8,20 +9,30 @@
 
 #define _BINARY_OP(OP)                                                         \
   {                                                                            \
-    f64 b = _pop();                                                            \
-    f64 a = _pop();                                                            \
+    Number b = _pop();                                                         \
+    Number a = _pop();                                                         \
     _push(a OP b);                                                             \
   }
 
 using namespace GuiSE;
 
-InterpretResult VM::Interpret(ByteCode *ByteCode) {
-  _byte_code = ByteCode;
+InterpretResult VM::Interpret(const ByteCode &byte_code) {
+  _byte_code = &byte_code;
   _ip = _byte_code->GetByteCodePtr();
-  return Run();
+  return _run();
 }
 
-InterpretResult VM::Run() {
+InterpretResult VM::Interpret(const char *source) { 
+    ByteCode byte_code;
+
+    if (!compile(source, byte_code)) {
+        return InterpretResult::CompileError;
+    }
+
+    return Interpret(byte_code);
+}
+
+InterpretResult VM::_run() {
   _reset_stack();
   for (;;) {
     auto instruction = _peek();
@@ -55,12 +66,12 @@ InterpretResult VM::Run() {
 
 void VM::_reset_stack() { _stack_top = _stack; }
 
-void VM::_push(f64 value) {
+void VM::_push(Number value) {
   *_stack_top = value;
   _stack_top++;
 }
 
-f64 VM::_pop() {
+Number VM::_pop() {
   _stack_top--;
   return *_stack_top;
 }

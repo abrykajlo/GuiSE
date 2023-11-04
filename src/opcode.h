@@ -6,7 +6,7 @@
 #include <functional>
 
 namespace GuiSE {
-enum class OpCode : u8 {
+enum class OpCode : uint8_t {
   NoOp,
   Push,
   Add,
@@ -23,7 +23,7 @@ template <OpCode O> struct Instruction {
 
 template <> struct Instruction<OpCode::Push> {
   OpCode op_code;
-  f64 value;
+  Number value;
 };
 #pragma pack(pop)
 

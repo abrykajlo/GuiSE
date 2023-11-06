@@ -22,14 +22,14 @@ InterpretResult VM::Interpret(const ByteCode &byte_code) {
   return _run();
 }
 
-InterpretResult VM::Interpret(const char *source) { 
-    ByteCode byte_code;
+InterpretResult VM::Interpret(const char *source) {
+  ByteCode byte_code;
 
-    if (!compile(source, byte_code)) {
-        return InterpretResult::CompileError;
-    }
+  if (!compile(source, byte_code)) {
+    return InterpretResult::CompileError;
+  }
 
-    return Interpret(byte_code);
+  return Interpret(byte_code);
 }
 
 InterpretResult VM::_run() {

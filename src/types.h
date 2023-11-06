@@ -3,12 +3,12 @@
 #include <cstdint>
 
 namespace GuiSE {
-	// str
-	using Str = const char*;
+// str
+using Str = const char *;
 
-	// bool
-	using Bool = bool;
+// bool
+using Bool = bool;
 
-	// floating
-	using Number = double;
+// floating
+using Number = double;
 } // namespace GuiSE

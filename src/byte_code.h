@@ -1,32 +1,21 @@
 #pragma once
 
-#include "opcode.h"
-#include "types.h"
-
 #include <cstdint>
-#include <optional>
 #include <vector>
 
 namespace GuiSE {
+struct Value;
 class ByteCode {
 public:
-  template <OpCode O> void Write(const Instruction<O> &instruction) {
-    auto byte = reinterpret_cast<const char *>(&instruction);
-    for (int i = 0; i < sizeof(Instruction<O>); i++) {
-      _byte_code.push_back(*(byte + i));
-    }
-  }
+  void Write(uint8_t byte);
 
-  const uint8_t *GetByteCodePtr() const;
+  int AddConstant(Value value);
+  Value GetConstant(int index) const;
 
-  void Disassemble(const char *name) const;
+  const std::vector<uint8_t> &get_byte_code() const;
 
 private:
-  int _disassemble_instruction(int offset) const;
-  int _push_instruction(const char *name,
-                        const Instruction<OpCode::Push> &instruction,
-                        int offset) const;
-
   std::vector<uint8_t> _byte_code;
+  std::vector<Value> _constants;
 };
 } // namespace GuiSE

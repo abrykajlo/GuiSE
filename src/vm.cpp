@@ -1,31 +1,30 @@
 #include "vm.h"
 
+#include "byte_code.h"
 #include "compiler.h"
 #include "opcode.h"
 
-#define _RUN_CASE(OPCODE)                                                      \
-  case OpCode::OPCODE:                                                         \
-    _read<OpCode::OPCODE>();
-
-#define _BINARY_OP(OP)                                                         \
-  {                                                                            \
-    Number b = _pop();                                                         \
-    Number a = _pop();                                                         \
-    _push(a OP b);                                                             \
-  }
-
 using namespace GuiSE;
+
+namespace {
+inline Number plus(Number a, Number b) { return a + b; }
+
+inline Number multiply(Number a, Number b) { return a * b; }
+
+inline Number divide(Number a, Number b) { return a / b; }
+} // namespace
 
 InterpretResult VM::Interpret(const ByteCode &byte_code) {
   _byte_code = &byte_code;
-  _ip = _byte_code->GetByteCodePtr();
+  _ip = &_byte_code->get_byte_code()[0];
   return _run();
 }
 
 InterpretResult VM::Interpret(const char *source) {
+  Compiler compiler;
   ByteCode byte_code;
 
-  if (!compile(source, byte_code)) {
+  if (!compiler.Compile(source, byte_code)) {
     return InterpretResult::CompileError;
   }
 
@@ -35,30 +34,35 @@ InterpretResult VM::Interpret(const char *source) {
 InterpretResult VM::_run() {
   _reset_stack();
   for (;;) {
-    auto instruction = _peek();
-    switch (instruction->op_code) {
-      _RUN_CASE(Push) {
-        _push(instruction->op_push.value);
-        break;
-      }
-      _RUN_CASE(Negate) {
-        _push(-_pop());
-        break;
-      }
-      _RUN_CASE(Add) {
-        _BINARY_OP(+)
-        break;
-      }
-      _RUN_CASE(Multiply) {
-        _BINARY_OP(*)
-        break;
-      }
-      _RUN_CASE(Divide) {
-        _BINARY_OP(/)
-        break;
-      }
-      _RUN_CASE(Return) { return InterpretResult::Ok; }
-      _RUN_CASE(NoOp) { return InterpretResult::Ok; }
+    OpCode op_code;
+    switch (op_code = static_cast<OpCode>(_read())) {
+    case OpCode::Constant: {
+      const Value value = _byte_code->GetConstant(_read());
+      _push(value);
+      break;
+    }
+    case OpCode::Negate: {
+      _push(-_pop().number);
+      break;
+    }
+    case OpCode::Add: {
+      _binary_op<&Value::number>(plus);
+      break;
+    }
+    case OpCode::Multiply: {
+      _binary_op<&Value::number>(multiply);
+      break;
+    }
+    case OpCode::Divide: {
+      _binary_op<&Value::number>(divide);
+      break;
+    }
+    case OpCode::Return: {
+      return InterpretResult::Ok;
+    }
+    case OpCode::NoOp: {
+      return InterpretResult::Ok;
+    }
     }
   }
   return InterpretResult();
@@ -66,12 +70,12 @@ InterpretResult VM::_run() {
 
 void VM::_reset_stack() { _stack_top = _stack; }
 
-void VM::_push(Number value) {
+void VM::_push(Value value) {
   *_stack_top = value;
   _stack_top++;
 }
 
-Number VM::_pop() {
+Value VM::_pop() {
   _stack_top--;
   return *_stack_top;
 }

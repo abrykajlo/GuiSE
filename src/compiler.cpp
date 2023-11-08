@@ -1,52 +1,64 @@
 #include "compiler.h"
 
 #include "byte_code.h"
+#include "debug.h"
 #include "scanner.h"
+#include "types.h"
 
 using namespace GuiSE;
 
-namespace {
-class Parser {
-public:
-  Parser(const char *source, ByteCode &byte_code);
-
-  bool get_had_error();
-
-private:
-  void _advance();
-
-  void _error_at(const Token &token, const char *message);
-  void _error_at_current(const char *message);
-  void _error(const char *message);
-
-  Token _current;
-  Token _previous;
-  bool _had_error = false;
-  Scanner _scanner;
-  ByteCode &_byte_code;
-};
-
-Parser::Parser(const char *source, ByteCode &byte_code)
-    : _byte_code(byte_code) {
+bool Compiler::Compile(const char *source, ByteCode &byte_code) {
   _scanner.set_source(source);
+  _byte_code = &byte_code;
   _advance();
+  _expression();
+  _consume(TokenType::Eof, "Expect end of expression.");
+  return !_parser.had_error;
 }
 
-bool Parser::get_had_error() { return _had_error; }
-
-void Parser::_advance() {
-  _previous = _current;
+void Compiler::_advance() {
+  _parser.previous = _parser.current;
 
   for (;;) {
-    _current = _scanner.ScanToken();
-    if (_current.type != TokenType::Error)
+    _parser.current = _scanner.ScanToken();
+    if (_parser.current.type != TokenType::Error)
       break;
 
-    _error_at_current(_current.start);
+    _error_at_current(_parser.current.start);
   }
 }
 
-void Parser::_error_at(const Token &token, const char *message) {
+void Compiler::_consume(TokenType type, const char *message) {
+  if (_parser.current.type == type) {
+    _advance();
+    return;
+  }
+
+  _error_at_current(message);
+}
+
+void Compiler::_expression() { _number(); }
+
+void Compiler::_number() {
+  GUISE_ASSERT(_byte_code != nullptr)
+
+  Value value = {strtod(_parser.previous.start, nullptr)};
+  int index = _byte_code->AddConstant(value);
+  _emit_byte(OpCode::Constant);
+  _emit_byte(index);
+}
+
+void Compiler::_emit_byte(uint8_t byte) {
+  GUISE_ASSERT(_byte_code != nullptr)
+
+  _byte_code->Write(byte);
+}
+
+void Compiler::_emit_byte(OpCode op_code) {
+  _emit_byte(static_cast<uint8_t>(op_code));
+}
+
+void Compiler::_error_at(const Token &token, const char *message) {
   fprintf(stderr, "[line %d] Error", token.line);
 
   if (token.type == TokenType::Eof) {
@@ -58,15 +70,16 @@ void Parser::_error_at(const Token &token, const char *message) {
   }
 
   fprintf(stderr, ": %s\n", message);
-  _had_error = true;
+  _parser.had_error = true;
 }
 
-void Parser::_error_at_current(const char *message) {
-  _error_at(_current, message);
+void Compiler::_error_at_current(const char *message) {
+  _error_at(_parser.current, message);
 }
 
-void Parser::_error(const char *message) { _error_at(_previous, message); }
-} // namespace
+void Compiler::_error(const char *message) {
+  _error_at(_parser.previous, message);
+}
 
 enum class Precedence {
   None,
@@ -89,8 +102,3 @@ struct ParseRule {
   ParseFn infix;
   Precedence precedence;
 };
-
-bool GuiSE::compile(const char *source, ByteCode &byte_code) {
-  Parser parser(source, byte_code);
-  return false;
-}

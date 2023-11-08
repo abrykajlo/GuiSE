@@ -1,4 +1,4 @@
-#include "scanner.h"
+#include "vm.h"
 
 #include <iostream>
 #include <string>
@@ -6,7 +6,7 @@
 using namespace GuiSE;
 
 static void repl() {
-  Scanner scanner;
+  VM vm;
   std::string line;
   for (;;) {
     std::cout << "> ";
@@ -16,13 +16,7 @@ static void repl() {
       break;
     }
 
-    scanner.set_source(line);
-    Token token = scanner.ScanToken();
-    std::cout << std::string(token.start, token.length) << std::endl;
-    while (token.type != TokenType::Eof && token.type != TokenType::Error) {
-      token = scanner.ScanToken();
-      std::cout << std::string(token.start, token.length) << std::endl;
-    }
+    vm.Interpret(line.c_str());
   }
 }
 

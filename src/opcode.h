@@ -10,6 +10,7 @@ enum class OpCode : uint8_t {
   Multiply,
   Divide,
   Negate,
+  Log,
   Return,
 };
 } // namespace GuiSE

@@ -77,7 +77,7 @@ Token Scanner::ScanToken() {
 char Scanner::_advance() { return *_current++; }
 
 Token Scanner::_error_token(const char *error) {
-  Token token{
+  Token token = {
       TokenType::Error,
       error,
       static_cast<int>(strlen(error)),
@@ -89,7 +89,7 @@ Token Scanner::_error_token(const char *error) {
 bool Scanner::_is_at_end() { return _current == &_source[_source.size()]; }
 
 Token Scanner::_make_token(TokenType type) {
-  Token token{type, _start, _current - _start, _line};
+  Token token = {type, _start, _current - _start, _line};
   return token;
 }
 
@@ -118,7 +118,7 @@ bool Scanner::_match(char expected) {
 
 char Scanner::_peek() { return *_current; }
 
-char GuiSE::Scanner::_peek_next() { return _current[1]; }
+char Scanner::_peek_next() { return _current[1]; }
 
 void Scanner::_reset() {
   _start = &_source[0];

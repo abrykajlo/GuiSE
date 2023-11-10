@@ -5,16 +5,14 @@
 
 using namespace GuiSE;
 
-void GuiSE::ByteCode::Write(uint8_t byte) {}
+void ByteCode::Write(uint8_t byte) { _byte_code.push_back(byte); }
 
-int GuiSE::ByteCode::AddConstant(Value value) {
+int ByteCode::AddConstant(Value value) {
   _constants.push_back(value);
-  return _constants.size();
+  return _constants.size() - 1;
 }
 
-Value GuiSE::ByteCode::GetConstant(int index) const {
-  return _constants[index];
-}
+Value ByteCode::GetConstant(int index) const { return _constants[index]; }
 
 const std::vector<uint8_t> &ByteCode::get_byte_code() const {
   return _byte_code;

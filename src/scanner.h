@@ -4,7 +4,6 @@
 
 namespace GuiSE {
 enum class TokenType {
-  Invalid,
   // single character
   OpenParen,
   CloseParen,
@@ -52,11 +51,12 @@ enum class TokenType {
   While,
   // terminating tokens
   Error,
-  Eof
+  Eof,
+  Count,
 };
 
 struct Token {
-  TokenType type = TokenType::Invalid;
+  TokenType type;
   const char *start;
   int length;
   int line;

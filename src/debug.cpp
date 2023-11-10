@@ -15,7 +15,7 @@ int simple_instruction(const char *name, int offset) {
 
 using namespace GuiSE;
 
-GuiSE::Disassembler::Disassembler(const char *name, const ByteCode &byte_code)
+Disassembler::Disassembler(const char *name, const ByteCode &byte_code)
     : _byte_code(byte_code), _name(name) {}
 
 void Disassembler::Disassemble() const {

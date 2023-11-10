@@ -35,7 +35,7 @@ InterpretResult VM::_run() {
   _reset_stack();
   for (;;) {
     OpCode op_code;
-    switch (op_code = static_cast<OpCode>(_read())) {
+    switch (op_code = _read<OpCode>()) {
     case OpCode::Constant: {
       const Value value = _byte_code->GetConstant(_read());
       _push(value);
@@ -55,6 +55,11 @@ InterpretResult VM::_run() {
     }
     case OpCode::Divide: {
       _binary_op<&Value::number>(divide);
+      break;
+    }
+    case OpCode::Log: {
+      ValueType type = _read<ValueType>();
+      printValue(type, _pop());
       break;
     }
     case OpCode::Return: {

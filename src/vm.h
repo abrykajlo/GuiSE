@@ -18,6 +18,7 @@ public:
 private:
   InterpretResult _run();
 
+  template <typename T> inline T _read() { return static_cast<T>(_read()); }
   inline uint8_t _read() { return *_ip++; }
 
   void _reset_stack();

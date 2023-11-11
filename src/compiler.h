@@ -2,6 +2,7 @@
 
 #include "opcode.h"
 #include "scanner.h"
+#include "types.h"
 
 namespace GuiSE {
 class ByteCode;
@@ -31,8 +32,9 @@ struct ParseRule {
 };
 
 struct Parser {
-  Token current;
-  Token previous;
+  Token curr;
+  Token prev;
+  ValueType value_type = ValueType::Invalid;
   bool had_error = false;
   bool panic_mode = false;
 };
@@ -44,6 +46,7 @@ public:
 private:
   void _advance();
   void _consume(TokenType type, const char *message);
+  void _type_error(ValueType expected, ValueType type, const char *message);
 
   const ParseRule &_get_parse_rule(TokenType token_type) const;
   void _parse_precedence(Precedence prec);
@@ -52,6 +55,7 @@ private:
 
   void _binary();
   void _grouping();
+  void _literal();
   void _number();
   void _unary();
 

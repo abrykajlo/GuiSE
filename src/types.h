@@ -14,19 +14,20 @@ using Bool = bool;
 using Number = double;
 
 enum class ValueType : uint8_t {
+  Invalid,
   Bool,
   Number,
 };
 
 struct Value {
   union {
-    Bool boolean;
+    Bool bool_;
     Number number;
   };
 
   Value() : number(0) {}
 
-  Value(Bool boolean) : boolean(boolean) {}
+  Value(Bool boolean) : bool_(boolean) {}
 
   Value(Number number) : number(number) {}
 };

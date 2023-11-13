@@ -5,16 +5,13 @@
 
 namespace GuiSE {
 // str
-using Str = const char *;
+class Str;
 
 // bool
 using Bool = bool;
 
 // floating
 using Number = double;
-
-// objects
-class Object;
 
 enum class ValueType : uint8_t {
   Invalid,
@@ -27,7 +24,7 @@ struct Value {
   union {
     Bool bool_;
     Number number;
-    Object *object;
+    Str *str;
   };
 
   Value() : number(0) {}
@@ -36,7 +33,7 @@ struct Value {
 
   Value(Number number) : number(number) {}
 
-  Value(Object *object) : object(object) {}
+  Value(Str *str) : str(str) {}
 };
 
 void log_value(ValueType type, Value value);

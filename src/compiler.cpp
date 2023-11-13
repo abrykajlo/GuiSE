@@ -243,7 +243,7 @@ void Compiler::_number() {
 }
 
 void Compiler::_string() {
-  _emit_constant(new String(_parser.prev.start + 1, _parser.prev.length - 2));
+  _emit_constant(new Str(_parser.prev.start + 1, _parser.prev.length - 2));
 
   _parser.value_type = ValueType::Str;
 }

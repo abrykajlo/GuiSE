@@ -4,18 +4,10 @@
 #include <string>
 
 namespace GuiSE {
-enum class ObjectType {
-  String,
-};
-
-class Object {
+class Str {
 public:
-  virtual ~Object() = default;
-};
-
-class String : public Object {
-public:
-  String(const char *chars, int length);
+  Str(const char *chars, int length);
+  ~Str();
 
   const std::string &get_str() const;
 

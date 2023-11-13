@@ -57,6 +57,7 @@ private:
   void _grouping();
   void _literal();
   void _number();
+  void _string();
   void _unary();
 
   void _emit_byte(uint8_t byte);
@@ -64,6 +65,9 @@ private:
   template <typename T> inline void _emit_byte(T byte) {
     _emit_byte(static_cast<uint8_t>(byte));
   }
+
+  void _emit_constant(Value value);
+  uint8_t _make_constant(Value value);
 
   void _error_at(const Token &token, const char *message);
   void _error_at_current(const char *message);

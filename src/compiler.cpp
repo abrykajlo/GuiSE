@@ -2,6 +2,7 @@
 
 #include "byte_code.h"
 #include "debug.h"
+#include "object.h"
 #include "scanner.h"
 #include "types.h"
 
@@ -38,6 +39,7 @@ DEFINE_TOKEN_RULE(True, &Compiler::_literal)
 DEFINE_TOKEN_RULE(False, &Compiler::_literal)
 DEFINE_TOKEN_RULE(Number, &Compiler::_number)
 DEFINE_TOKEN_RULE(OpenParen, &Compiler::_grouping)
+DEFINE_TOKEN_RULE(String, &Compiler::_string)
 DEFINE_TOKEN_RULE(Or, nullptr, &Compiler::_binary, Precedence::Or)
 DEFINE_TOKEN_RULE(And, nullptr, &Compiler::_binary, Precedence::And)
 DEFINE_TOKEN_RULE(BangEqual, nullptr, &Compiler::_binary, Precedence::Equality)
@@ -234,14 +236,16 @@ void Compiler::_literal() {
 }
 
 void Compiler::_number() {
-  GUISE_ASSERT(_byte_code != nullptr)
-
   Value value = strtod(_parser.prev.start, nullptr);
-  int index = _byte_code->AddConstant(value);
-  _emit_byte(OpCode::Constant);
-  _emit_byte(index);
+  _emit_constant(value);
 
   _parser.value_type = ValueType::Number;
+}
+
+void Compiler::_string() {
+  _emit_constant(new String(_parser.prev.start + 1, _parser.prev.length - 2));
+
+  _parser.value_type = ValueType::Str;
 }
 
 void Compiler::_unary() {
@@ -266,6 +270,23 @@ void Compiler::_emit_byte(uint8_t byte) {
   GUISE_ASSERT(_byte_code != nullptr)
 
   _byte_code->Write(byte);
+}
+
+void Compiler::_emit_constant(Value value) {
+  _emit_byte(OpCode::Constant);
+  _emit_byte(_make_constant(value));
+}
+
+uint8_t Compiler::_make_constant(Value value) {
+  GUISE_ASSERT(_byte_code != nullptr)
+
+  int constant = _byte_code->AddConstant(value);
+  if (constant > std::numeric_limits<uint8_t>::max()) {
+    _error("Too many constants in one chunk.");
+    return 0;
+  }
+
+  return static_cast<uint8_t>(constant);
 }
 
 void Compiler::_error_at(const Token &token, const char *message) {

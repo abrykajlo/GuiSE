@@ -10,7 +10,6 @@
 #endif
 
 namespace GuiSE {
-
 class ByteCode;
 
 struct Value;

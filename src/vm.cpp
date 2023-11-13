@@ -91,7 +91,7 @@ InterpretResult VM::_run() {
       break;
     case OpCode::Log: {
       ValueType type = _read<ValueType>();
-      printValue(type, _pop());
+      log_value(type, _pop());
     } break;
     case OpCode::Return: {
       return InterpretResult::Ok;
@@ -101,7 +101,8 @@ InterpretResult VM::_run() {
     }
     }
   }
-  return InterpretResult();
+
+  return InterpretResult::Ok;
 }
 
 void VM::_reset_stack() { _stack_top = _stack; }

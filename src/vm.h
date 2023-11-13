@@ -5,7 +5,6 @@
 #define STACK_MAX 256
 
 namespace GuiSE {
-
 class ByteCode;
 
 enum class InterpretResult { Ok, CompileError, RuntimeError };

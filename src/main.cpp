@@ -1,12 +1,14 @@
 #include "vm.h"
 
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 using namespace GuiSE;
 
-static void repl() {
-  VM vm;
+namespace {
+void repl(VM &vm) {
   std::string line;
   for (;;) {
     std::cout << "> ";
@@ -17,12 +19,25 @@ static void repl() {
     }
 
     vm.Interpret(line.c_str());
+    std::cout << std::endl;
   }
 }
 
+void run_file(VM &vm, const char *file_name) {
+  std::ifstream file(file_name);
+  std::stringstream ss;
+  ss << file.rdbuf();
+
+  vm.Interpret(ss.str().c_str());
+}
+} // namespace
+
 int main(int argc, const char *argv[]) {
+  VM vm;
   if (argc == 1) {
-    repl();
+    repl(vm);
+  } else if (argc == 2) {
+    run_file(vm, argv[1]);
   }
 
   return 0;

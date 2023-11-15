@@ -1,8 +1,9 @@
 include(util)
 
-MAKE_SOURCES(GUISE_SOURCES H_CPP byte_code compiler debug object scanner types vm H opcode)
+add_subdirectory(guise)
 
-add_executable(GuiSE main.cpp ${GUISE_SOURCES})
+add_executable(GuiSE main.cpp)
+target_link_libraries(GuiSE Compiler Debug VM)
 set_target_properties(GuiSE
     PROPERTIES
         CXX_STANDARD 17

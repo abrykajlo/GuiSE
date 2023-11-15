@@ -7,7 +7,7 @@ endmacro()
 function(MAKE_SOURCES sources)
     cmake_parse_arguments(MAKE_SOURCES "" "" "H;H_CPP" ${ARGN})
     
-    if(NOT MAKE_SOURCES_H OR NOT MAKE_SOURCES_H_CPP)
+    if(NOT MAKE_SOURCES_H AND NOT MAKE_SOURCES_H_CPP)
         message(FATAL_ERROR "missing filenames")
     endif()
 

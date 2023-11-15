@@ -1,6 +1,6 @@
 #include "types.h"
 
-#include "object.h"
+#include <guise/vm/object.h>
 
 void GuiSE::log_value(ValueType type, Value value) {
   switch (type) {

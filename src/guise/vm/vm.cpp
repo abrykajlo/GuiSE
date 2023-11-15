@@ -1,8 +1,9 @@
 #include "vm.h"
 
 #include "byte_code.h"
-#include "compiler.h"
 #include "opcode.h"
+
+#include <guise/compiler/compiler.h>
 
 using namespace GuiSE;
 

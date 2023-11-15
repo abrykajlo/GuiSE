@@ -1,8 +1,9 @@
 #pragma once
 
-#include "opcode.h"
 #include "scanner.h"
 #include "types.h"
+
+#include <guise/vm/opcode.h>
 
 namespace GuiSE {
 class ByteCode;

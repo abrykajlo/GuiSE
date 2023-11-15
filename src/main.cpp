@@ -1,4 +1,4 @@
-#include "vm.h"
+#include <guise/vm/vm.h>
 
 #include <fstream>
 #include <iostream>

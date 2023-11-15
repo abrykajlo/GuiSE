@@ -1,8 +1,8 @@
 #include "debug.h"
 
-#include "byte_code.h"
-#include "opcode.h"
-#include "types.h"
+#include <guise/compiler/types.h>
+#include <guise/vm/byte_code.h>
+#include <guise/vm/opcode.h>
 
 #include <cstdio>
 

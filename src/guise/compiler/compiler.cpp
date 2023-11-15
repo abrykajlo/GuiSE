@@ -1,10 +1,11 @@
 #include "compiler.h"
 
-#include "byte_code.h"
-#include "debug.h"
-#include "object.h"
 #include "scanner.h"
 #include "types.h"
+
+#include <guise/debug/debug.h>
+#include <guise/vm/byte_code.h>
+#include <guise/vm/object.h>
 
 #define DEFINE_TOKEN_RULE(TOKEN, ...)                                          \
   template <> ParseRule Compiler::_parse_rule<TokenType::TOKEN> = {__VA_ARGS__};

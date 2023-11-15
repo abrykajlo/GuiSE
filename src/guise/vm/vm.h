@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.h"
+#include <guise/compiler/types.h>
 
 #define STACK_MAX 256
 

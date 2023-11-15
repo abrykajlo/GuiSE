@@ -1,7 +1,8 @@
 #include "byte_code.h"
 
 #include "opcode.h"
-#include "types.h"
+
+#include <guise/compiler/types.h>
 
 using namespace GuiSE;
 

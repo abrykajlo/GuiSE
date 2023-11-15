@@ -1,5 +1,6 @@
 include(util)
 
+set(GUISE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 add_subdirectory(guise)
 
 add_executable(GuiSE main.cpp)

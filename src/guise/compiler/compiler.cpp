@@ -3,7 +3,7 @@
 #include "scanner.h"
 #include "types.h"
 
-#include <guise/debug/debug.h>
+#include <guise/debug.h>
 #include <guise/vm/byte_code.h>
 #include <guise/vm/object.h>
 

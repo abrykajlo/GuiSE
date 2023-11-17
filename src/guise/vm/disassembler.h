@@ -1,18 +1,9 @@
 #pragma once
 
-#include <cassert>
 #include <cstdint>
-
-#ifdef _DEBUG
-#define GUISE_ASSERT(ASSERTION) assert(ASSERTION);
-#else
-#define GUISE_ASSERT(ASSERTION)
-#endif
 
 namespace GuiSE {
 class ByteCode;
-
-struct Value;
 
 class Disassembler {
 public:

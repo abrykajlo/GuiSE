@@ -1,4 +1,4 @@
-#include "debug.h"
+#include "disassembler.h"
 
 #include <guise/compiler/types.h>
 #include <guise/vm/byte_code.h>

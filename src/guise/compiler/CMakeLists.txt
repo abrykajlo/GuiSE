@@ -1,6 +1,5 @@
 MAKE_SOURCES(GUISE_COMPILER_SOURCES
-    H_CPP compiler scanner types
-    H backends/backend
+    H_CPP compiler parser scanner types
 )
 
 add_library(Compiler ${GUISE_COMPILER_SOURCES})

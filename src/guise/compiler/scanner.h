@@ -53,25 +53,20 @@ enum class TokenType {
   Error,
   Eof,
   Count,
+  Invalid,
 };
 
 struct Token {
-  TokenType type;
-  const char *start;
-  int length;
-  int line;
+  const char *start = nullptr;
+  int length = 0;
+  int line = -1;
 };
 
 class Scanner {
 public:
-  Scanner();
+  Scanner(const char *source);
 
-  Token ScanToken();
-
-  inline void set_source(const std::string &source) {
-    _source = source;
-    _reset();
-  }
+  TokenType ScanToken(Token &token);
 
 private:
   char _advance();
@@ -80,21 +75,20 @@ private:
   char _peek();
   char _peek_next();
 
-  Token _error_token(const char *error);
-  Token _make_token(TokenType type);
-  Token _number();
-  Token _string();
-  Token _identifier();
-  TokenType _identifier_type();
+  void _make_token(Token &token);
+  void _number(Token &token);
+  void _error_token(const char *error, Token &token);
+  TokenType _string(Token &token);
+  TokenType _identifier(Token &token);
+  TokenType _identifier_t();
   TokenType _check_keyword(int start, int length, const char *rest,
                            TokenType type);
 
-  void _reset();
   void _skip_whitespace();
 
-  std::string _source;
-  const char *_start = nullptr;
-  const char *_current = nullptr;
+  const char *_source;
+  const char *_start;
+  const char *_current;
   int _line = 1;
 };
 } // namespace GuiSE

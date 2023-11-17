@@ -35,10 +35,9 @@ InterpretResult VM::Interpret(const ByteCode &byte_code) {
 }
 
 InterpretResult VM::Interpret(const char *source) {
-  Compiler compiler;
   ByteCode byte_code;
 
-  if (!compiler.Compile(source, byte_code)) {
+  if (!compile(source, byte_code)) {
     return InterpretResult::CompileError;
   }
 

@@ -5,11 +5,6 @@
 #include <guise/vm/object.h>
 #include <guise/vm/opcode.h>
 
-#define DEFINE_TOKEN_RULE(TOKEN, ...)                                          \
-  template <> ParseRule parse_rule<TokenType::TOKEN> = {__VA_ARGS__};
-
-#define TOKEN_RULE(INDEX) parse_rule<static_cast<TokenType>(INDEX)>
-
 using namespace GuiSE;
 
 namespace {
@@ -21,42 +16,6 @@ const char *expect_number_right_operand = "Expect number type right operand.";
 
 const char *expect_bool_left_operand = "Expect bool type left operand.";
 const char *expect_bool_right_operand = "Expect bool type right operand.";
-
-template <TokenType T> static inline ParseRule parse_rule;
-
-DEFINE_TOKEN_RULE(True, &Parser::Literal)
-DEFINE_TOKEN_RULE(False, &Parser::Literal)
-DEFINE_TOKEN_RULE(Number, &Parser::Number)
-DEFINE_TOKEN_RULE(OpenParen, &Parser::Grouping)
-DEFINE_TOKEN_RULE(String, &Parser::String)
-DEFINE_TOKEN_RULE(Or, nullptr, &Parser::Binary, Precedence::Or)
-DEFINE_TOKEN_RULE(And, nullptr, &Parser::Binary, Precedence::And)
-DEFINE_TOKEN_RULE(BangEqual, nullptr, &Parser::Binary, Precedence::Equality)
-DEFINE_TOKEN_RULE(EqualEqual, nullptr, &Parser::Binary, Precedence::Equality)
-DEFINE_TOKEN_RULE(Greater, nullptr, &Parser::Binary, Precedence::Comparison)
-DEFINE_TOKEN_RULE(GreaterEqual, nullptr, &Parser::Binary,
-                  Precedence::Comparison)
-DEFINE_TOKEN_RULE(Less, nullptr, &Parser::Binary, Precedence::Comparison)
-DEFINE_TOKEN_RULE(LessEqual, nullptr, &Parser::Binary, Precedence::Comparison)
-DEFINE_TOKEN_RULE(Minus, &Parser::Unary, &Parser::Binary, Precedence::Term)
-DEFINE_TOKEN_RULE(Plus, nullptr, &Parser::Binary, Precedence::Term)
-DEFINE_TOKEN_RULE(Star, nullptr, &Parser::Binary, Precedence::Factor)
-DEFINE_TOKEN_RULE(Slash, nullptr, &Parser::Binary, Precedence::Factor)
-DEFINE_TOKEN_RULE(Bang, &Parser::Unary, nullptr, Precedence::Unary)
-
-ParseRule parse_rules[] = {
-    TOKEN_RULE(0),  TOKEN_RULE(1),  TOKEN_RULE(2),  TOKEN_RULE(3),
-    TOKEN_RULE(4),  TOKEN_RULE(5),  TOKEN_RULE(6),  TOKEN_RULE(7),
-    TOKEN_RULE(8),  TOKEN_RULE(9),  TOKEN_RULE(10), TOKEN_RULE(11),
-    TOKEN_RULE(12), TOKEN_RULE(13), TOKEN_RULE(14), TOKEN_RULE(15),
-    TOKEN_RULE(16), TOKEN_RULE(17), TOKEN_RULE(18), TOKEN_RULE(19),
-    TOKEN_RULE(20), TOKEN_RULE(21), TOKEN_RULE(22), TOKEN_RULE(23),
-    TOKEN_RULE(24), TOKEN_RULE(25), TOKEN_RULE(26), TOKEN_RULE(27),
-    TOKEN_RULE(28), TOKEN_RULE(29), TOKEN_RULE(30), TOKEN_RULE(31),
-    TOKEN_RULE(32), TOKEN_RULE(33), TOKEN_RULE(34), TOKEN_RULE(35),
-    TOKEN_RULE(36), TOKEN_RULE(37), TOKEN_RULE(38), TOKEN_RULE(39),
-    TOKEN_RULE(40), TOKEN_RULE(41), TOKEN_RULE(42),
-};
 } // namespace
 
 void Parser::_advance() {
@@ -72,6 +31,8 @@ void Parser::_advance() {
   }
 }
 
+bool Parser::_check(TokenType token_t) { return _curr_token_t == token_t; }
+
 void Parser::_consume(TokenType type, const char *message) {
   if (_curr_token_t == type) {
     _advance();
@@ -81,6 +42,14 @@ void Parser::_consume(TokenType type, const char *message) {
   _error_at_current(message);
 }
 
+bool Parser::_match(TokenType token_t) {
+  if (_check(token_t)) {
+    _advance();
+    return true;
+  }
+  return false;
+}
+
 void Parser::_type_error(ValueType expected, ValueType type,
                          const char *message) {
   if (expected != type) {
@@ -88,16 +57,61 @@ void Parser::_type_error(ValueType expected, ValueType type,
   }
 }
 
-const ParseRule &Parser::_get_parse_rule(TokenType token_t) const {
-  static_assert(sizeof(parse_rules) / sizeof(ParseRule) ==
-                static_cast<int>(TokenType::Count));
+Parser::ParseFn Parser::_get_prefix_rule(TokenType token_t) const {
+  switch (token_t) {
+  case TokenType::True:
+  case TokenType::False:
+    return &Parser::_literal;
+  case TokenType::Bang:
+  case TokenType::Minus:
+    return &Parser::_unary;
+  case TokenType::Number:
+    return &Parser::_number;
+  case TokenType::OpenParen:
+    return &Parser::_grouping;
+  case TokenType::String:
+    return &Parser::_string;
+  }
 
-  return parse_rules[static_cast<int>(token_t)];
+  return nullptr;
+}
+
+const Parser::InfixRule &Parser::_get_infix_rule(TokenType token_t) const {
+  static InfixRule or_rule = {&Parser::_binary, Precedence::Or};
+  static InfixRule and_rule{&Parser::_binary, Precedence::And};
+  static InfixRule equality_rule = {&Parser::_binary, Precedence::Equality};
+  static InfixRule comparison_rule = {&Parser::_binary, Precedence::Comparison};
+  static InfixRule term_rule = {&Parser::_binary, Precedence::Term};
+  static InfixRule factor_rule = {&Parser::_binary, Precedence::Factor};
+
+  switch (token_t) {
+  case TokenType::Or:
+    return or_rule;
+  case TokenType::And:
+    return and_rule;
+  case TokenType::BangEqual:
+  case TokenType::EqualEqual:
+    return equality_rule;
+  case TokenType::Greater:
+  case TokenType::GreaterEqual:
+  case TokenType::Less:
+  case TokenType::LessEqual:
+    return comparison_rule;
+  case TokenType::Minus:
+  case TokenType::Plus:
+    return term_rule;
+  case TokenType::Star:
+  case TokenType::Slash:
+    return factor_rule;
+  }
+
+  static InfixRule empty;
+  return empty;
 }
 
 void Parser::_parse_precedence(Precedence prec) {
   _advance();
-  ParseFn prefix_rule = _get_parse_rule(_prev_token_t).prefix;
+  ParseFn prefix_rule = _get_prefix_rule(_prev_token_t);
   if (prefix_rule == nullptr) {
     _error("Expect expression.");
     return;
@@ -105,18 +119,20 @@ void Parser::_parse_precedence(Precedence prec) {
 
   (this->*prefix_rule)();
 
-  while (prec <= _get_parse_rule(_curr_token_t).prec) {
+  const InfixRule *infix_rule = &_get_infix_rule(_curr_token_t);
+  while (prec <= infix_rule->prec) {
     _advance();
-    ParseFn infix_rule = _get_parse_rule(_prev_token_t).infix;
-    (this->*infix_rule)();
+    const ParseFn rule = infix_rule->rule;
+    (this->*rule)();
+    infix_rule = &_get_infix_rule(_curr_token_t);
   }
 }
 
-void Parser::Binary() {
+void Parser::_binary() {
   ValueType left_last_value_t = _last_value_t;
 
   TokenType operator_t = _prev_token_t;
-  const ParseRule &rule = _get_parse_rule(operator_t);
+  const InfixRule &rule = _get_infix_rule(operator_t);
   _parse_precedence(static_cast<Precedence>(static_cast<int>(rule.prec) + 1));
   ValueType right_last_value_t = _last_value_t;
 
@@ -209,14 +225,59 @@ Parser::Parser(Scanner &scanner, ByteCode &byte_code)
   _advance();
 }
 
-void Parser::Expression() { _parse_precedence(Precedence::Assignment); }
+bool Parser::Parse() {
+  while (!_match(TokenType::Eof)) {
+    _global_declaration();
+  }
 
-void Parser::Grouping() {
-  Expression();
+  return !_had_error;
+}
+
+void Parser::_declaration() { _statement(); }
+
+void Parser::_binding_declaration() {}
+
+void Parser::_global_declaration() {
+  if (_match(TokenType::Fn)) {
+    _fn_declaration();
+  } else {
+    _error_at_current("Expect global declaration.");
+  }
+}
+
+void Parser::_fn_declaration() {
+    _match(TokenType::Identifier);
+  _consume(TokenType::OpenBrace, "Expect '{'.");
+  while (!_match(TokenType::CloseBrace)) {
+    _declaration();
+  }
+}
+
+void Parser::_type_declaration() {}
+
+void Parser::_cmpt_declaration() {}
+
+void Parser::_statement() {
+  if (_match(TokenType::Log)) {
+    _log_statement();
+  }
+}
+
+void Parser::_log_statement() {
+  _expression();
+  _type_error(ValueType::Str, _last_value_t, "Exoect value of type str");
+  _consume(TokenType::SemiColon, "Expect ';' after value.");
+  _emit_byte(OpCode::Log);
+}
+
+void Parser::_expression() { _parse_precedence(Precedence::Assignment); }
+
+void Parser::_grouping() {
+  _expression();
   _consume(TokenType::CloseParen, "Expect ')' after expression.");
 }
 
-void Parser::Literal() {
+void Parser::_literal() {
   switch (_prev_token_t) {
   case TokenType::True:
     _emit_byte(OpCode::True);
@@ -229,20 +290,20 @@ void Parser::Literal() {
   }
 }
 
-void Parser::Number() {
+void Parser::_number() {
   Value value = strtod(_prev_token.start, nullptr);
   _emit_constant(value);
 
   _last_value_t = ValueType::Number;
 }
 
-void Parser::String() {
+void Parser::_string() {
   _emit_constant(new Str(_prev_token.start + 1, _prev_token.length - 2));
 
   _last_value_t = ValueType::Str;
 }
 
-void Parser::Unary() {
+void Parser::_unary() {
   TokenType operator_t = _prev_token_t;
 
   _parse_precedence(Precedence::Unary);

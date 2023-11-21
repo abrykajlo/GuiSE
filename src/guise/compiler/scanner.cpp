@@ -22,81 +22,86 @@ TokenType Scanner::ScanToken(Token &token) {
   _start = _current;
 
   if (_is_at_end()) {
-    _make_token(token);
-    return TokenType::Eof;
+    return _make_token(TokenType::Eof, token);
   }
 
   char c = _advance();
-  if (is_alpha(c)) {
+  if (is_alpha(c))
     return _identifier(token);
-  } else if (is_digit(c)) {
-    _number(token);
-    return TokenType::Number;
-  } else if (c == '"') {
-    return _string(token);
-  }
 
-  _make_token(token);
+  if (is_digit(c))
+    return _number(token);
+
+  if (c == '"')
+    return _string(token);
+
   switch (c) {
   case '(':
-    return TokenType::OpenParen;
+    return _make_token(TokenType::OpenParen, token);
   case ')':
-    return TokenType::CloseParen;
+    return _make_token(TokenType::CloseParen, token);
   case '{':
-    return TokenType::OpenBrace;
+    return _make_token(TokenType::OpenBrace, token);
   case '}':
-    return TokenType::CloseBrace;
+    return _make_token(TokenType::CloseBrace, token);
   case '[':
-    return TokenType::OpenBracket;
+    return _make_token(TokenType::OpenBracket, token);
   case ']':
-    return TokenType::CloseBracket;
+    return _make_token(TokenType::CloseBracket, token);
   case '.':
-    return TokenType::Dot;
+    return _make_token(TokenType::Dot, token);
   case '-':
-    return TokenType::Minus;
+    return _make_token(TokenType::Minus, token);
   case '+':
-    return TokenType::Plus;
+    return _make_token(TokenType::Plus, token);
   case '/':
-    return TokenType::Slash;
+    return _make_token(TokenType::Slash, token);
   case '*':
-    return TokenType::Star;
+    return _make_token(TokenType::Star, token);
   case ',':
-    return TokenType::Comma;
-  case ':':
-    return TokenType::Colon;
+    return _make_token(TokenType::Comma, token);
   case ';':
-    return TokenType::SemiColon;
+    return _make_token(TokenType::SemiColon, token);
+  case ':':
+    return _make_token(TokenType::Colon, token);
   case '!':
-    return _match('=') ? TokenType::BangEqual : TokenType::Bang;
+    return _match('=') ? _make_token(TokenType::BangEqual, token)
+                       : _make_token(TokenType::Bang, token);
   case '=':
-    return _match('=') ? TokenType::EqualEqual : TokenType::Equal;
+    return _match('=') ? _make_token(TokenType::EqualEqual, token)
+                       : _make_token(TokenType::Equal, token);
   case '<':
-    return _match('=') ? TokenType::LessEqual : TokenType::Less;
+    return _match('=') ? _make_token(TokenType::LessEqual, token)
+                       : _make_token(TokenType::Less, token);
   case '>':
-    return _match('=') ? TokenType::GreaterEqual : TokenType::Greater;
+    return _match('=') ? _make_token(TokenType::GreaterEqual, token)
+                       : _make_token(TokenType::Greater, token);
   }
 
-  _error_token(error_unexpected_character, token);
-  return TokenType::Error;
+  return _error_token(error_unexpected_character, token);
 }
 
 char Scanner::_advance() { return *_current++; }
 
-void Scanner::_error_token(const char *error, Token &token) {
+TokenType Scanner::_error_token(const char *error, Token &token) {
   token.start = error;
   token.length = strlen(error);
   token.line = _line;
+
+  return TokenType::Error;
 }
 
 bool Scanner::_is_at_end() { return *_current == '\0'; }
 
-void Scanner::_make_token(Token &token) {
+TokenType Scanner::_make_token(TokenType token_t, Token &token) {
   token.start = _start;
   token.length = _current - _start;
   token.line = _line;
+
+  return token_t;
 }
 
-void Scanner::_number(Token &token) {
+TokenType Scanner::_number(Token &token) {
   while (is_digit(_peek()))
     _advance();
 
@@ -107,7 +112,7 @@ void Scanner::_number(Token &token) {
       _advance();
   }
 
-  _make_token(token);
+  return _make_token(TokenType::Number, token);
 }
 
 bool Scanner::_match(char expected) {
@@ -148,28 +153,23 @@ void Scanner::_skip_whitespace() {
 
 TokenType Scanner::_string(Token &token) {
   while (!_is_at_end() && _peek() != '"') {
-    if (_peek() == '\n') {
-      _error_token(error_unterminated_string, token);
-      return TokenType::Error;
-    }
+    if (_peek() == '\n')
+      return _error_token(error_unterminated_string, token);
+
     _advance();
   }
 
-  if (_is_at_end()) {
-    _error_token(error_unterminated_string, token);
-    return TokenType::Error;
-  }
+  if (_is_at_end())
+    return _error_token(error_unterminated_string, token);
 
   _advance();
-  _make_token(token);
-  return TokenType::String;
+  return _make_token(TokenType::String, token);
 }
 
 TokenType Scanner::_identifier(Token &token) {
   while (is_alpha(_peek()) || is_digit(_peek()))
     _advance();
-  _make_token(token);
-  return _identifier_t();
+  return _make_token(_identifier_t(), token);
 }
 
 TokenType Scanner::_identifier_t() {

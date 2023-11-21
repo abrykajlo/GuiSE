@@ -1,3 +1,5 @@
+#include <guise/compiler/compiler.h>
+#include <guise/vm/byte_code.h>
 #include <guise/vm/vm.h>
 
 #include <fstream>
@@ -18,7 +20,10 @@ void repl(VM &vm) {
       break;
     }
 
-    vm.Interpret(line.c_str());
+    ByteCode byte_code;
+    compile(line.c_str(), byte_code);
+    vm.set_byte_code(byte_code);
+    vm.Run();
     std::cout << std::endl;
   }
 }
@@ -28,7 +33,10 @@ void run_file(VM &vm, const char *file_name) {
   std::stringstream ss;
   ss << file.rdbuf();
 
-  vm.Interpret(ss.str().c_str());
+  ByteCode byte_code;
+  compile(ss.str().c_str(), byte_code);
+  vm.set_byte_code(byte_code);
+  vm.Call("main");
 }
 } // namespace
 

@@ -3,8 +3,6 @@
 #include "byte_code.h"
 #include "opcode.h"
 
-#include <guise/compiler/compiler.h>
-
 using namespace GuiSE;
 
 namespace {
@@ -28,23 +26,26 @@ inline Bool op_or(Bool a, Bool b) { return a || b; }
 inline Bool op_and(Bool a, Bool b) { return a && b; }
 } // namespace
 
-InterpretResult VM::Interpret(const ByteCode &byte_code) {
-  _byte_code = &byte_code;
-  _ip = &_byte_code->get_byte_code()[0];
-  return _run();
+InterpretResult VM::Call(const char* function_name)
+{
+    const uint8_t* ip = 
+    _byte_code->GetFunction(function_name);
+    if (ip == nullptr) {
+    printf("Function %s does not exist.", function_name);
+    return InterpretResult::RuntimeError;
+    }
+
+    _ip = ip;
+    return Run();
 }
 
-InterpretResult VM::Interpret(const char *source) {
-  ByteCode byte_code;
-
-  if (!compile(source, byte_code)) {
-    return InterpretResult::CompileError;
-  }
-
-  return Interpret(byte_code);
+void GuiSE::VM::set_byte_code(const ByteCode& byte_code)
+{
+        _byte_code = &byte_code;
+        _ip = &_byte_code->get_byte_code()[0];
 }
 
-InterpretResult VM::_run() {
+InterpretResult VM::Run() {
   _reset_stack();
   for (;;) {
     OpCode op_code;

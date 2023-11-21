@@ -75,9 +75,9 @@ private:
   char _peek();
   char _peek_next();
 
-  void _make_token(Token &token);
-  void _number(Token &token);
-  void _error_token(const char *error, Token &token);
+  TokenType _number(Token &token);
+  TokenType _error_token(const char *error, Token &token);
+  TokenType _make_token(TokenType token_t, Token &token);
   TokenType _string(Token &token);
   TokenType _identifier(Token &token);
   TokenType _identifier_t();

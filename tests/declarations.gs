@@ -1,22 +1,22 @@
 # component definition
-Component : n number : b bool : cmpt;
+Component :: n number : b bool : cmpt;
 
 # type definition: type tag at end is optional
-Vec2 : x number : y number : type;
+type Vec2 : x number : y number;
 
 # the difference between component and type is that cmpt expects that
 # there is a registered type in C++ which has rendering capabilities
 
 # function definition
-compoundComponent : arg1 number : arg2 bool : fn cmpt {
+fn compoundComponent : arg1 number : arg2 bool : cmpt {
     # variable definition
-    x : number 4;
+    var x : number 4;
 
     # reassign variable
     x = 6;
 
     # using types
-    v : Vec2 x 6;
+    var v : Vec2 x 6;
 
     return Component x false;
     # can also use html style <Component n:x b:false />

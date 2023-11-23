@@ -30,7 +30,7 @@ TokenType Scanner::ScanToken(Token &token) {
     return _identifier(token);
 
   if (is_digit(c))
-    return _number(token);
+    return _integer_or_number(token);
 
   if (c == '"')
     return _string(token);
@@ -101,7 +101,7 @@ TokenType Scanner::_make_token(TokenType token_t, Token &token) {
   return token_t;
 }
 
-TokenType Scanner::_number(Token &token) {
+TokenType Scanner::_integer_or_number(Token &token) {
   while (is_digit(_peek()))
     _advance();
 
@@ -110,9 +110,11 @@ TokenType Scanner::_number(Token &token) {
 
     while (is_digit(_peek()))
       _advance();
+
+    return _make_token(TokenType::Number, token);
   }
 
-  return _make_token(TokenType::Number, token);
+  return _make_token(TokenType::Integer, token);
 }
 
 bool Scanner::_match(char expected) {
@@ -177,7 +179,7 @@ TokenType Scanner::_identifier_t() {
   case 'a':
     return _check_keyword(1, 2, "nd", TokenType::And);
   case 'b':
-    return _check_keyword(1, 3, "ool", TokenType::BoolType);
+    return _check_keyword(1, 3, "ool", TokenType::TypeBool);
   case 'c':
     return _check_keyword(1, 3, "mpt", TokenType::Cmpt);
   case 'e':
@@ -195,15 +197,23 @@ TokenType Scanner::_identifier_t() {
     }
     break;
   case 'i':
+    if (_current - _start > 1) {
+      switch (_start[1]) {
+      case 'f':
+        return _check_keyword(2, 0, "", TokenType::If);
+      case 'n':
+        return _check_keyword(2, 1, "t", TokenType::TypeInt);
+      }
+    }
     return _check_keyword(1, 1, "f", TokenType::If);
   case 'l':
     return _check_keyword(1, 2, "og", TokenType::Log);
   case 'n':
-    return _check_keyword(1, 5, "umber", TokenType::NumberType);
+    return _check_keyword(1, 5, "umber", TokenType::TypeNum);
   case 'o':
     return _check_keyword(1, 1, "r", TokenType::Or);
   case 's':
-    return _check_keyword(1, 2, "tr", TokenType::StrType);
+    return _check_keyword(1, 2, "tr", TokenType::TypeStr);
   case 'r':
     return _check_keyword(1, 5, "eturn", TokenType::Return);
   case 't':

@@ -8,18 +8,17 @@ using namespace GuiSE;
 
 void ByteCode::Write(uint8_t byte) { _byte_code.push_back(byte); }
 
-void GuiSE::ByteCode::AddFunction(const char* function_name)
-{
-	_function_offsets.insert({ function_name, _byte_code.size() });
+void GuiSE::ByteCode::AddFunction(const std::string &function_name) {
+  _function_offsets.insert({function_name, _byte_code.size()});
 }
 
-const uint8_t* GuiSE::ByteCode::GetFunction(const char* function_name) const
-{
-	auto it = _function_offsets.find(function_name);
-	if (it != _function_offsets.end()) {
-		return &_byte_code[it->second];
-	}
-	return nullptr;
+const uint8_t *
+GuiSE::ByteCode::GetFunction(const std::string &function_name) const {
+  auto it = _function_offsets.find(function_name);
+  if (it != _function_offsets.end()) {
+    return &_byte_code[it->second];
+  }
+  return nullptr;
 }
 
 int ByteCode::AddConstant(Value value) {

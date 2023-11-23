@@ -57,7 +57,7 @@ void Parser::_type_error(ValueType expected, ValueType type,
   }
 }
 
-Parser::ParseFn Parser::_get_prefix_rule(TokenType token_t) const {
+Parser::ParsePrefixFn Parser::_get_prefix_rule(TokenType token_t) const {
   switch (token_t) {
   case TokenType::True:
   case TokenType::False:
@@ -109,97 +109,97 @@ const Parser::InfixRule &Parser::_get_infix_rule(TokenType token_t) const {
   return empty;
 }
 
-void Parser::_parse_precedence(Precedence prec) {
+ValueType Parser::_parse_precedence(Precedence prec) {
   _advance();
-  ParseFn prefix_rule = _get_prefix_rule(_prev_token_t);
+  ParsePrefixFn prefix_rule = _get_prefix_rule(_prev_token_t);
   if (prefix_rule == nullptr) {
     _error("Expect expression.");
-    return;
+    return ValueType::Invalid;
   }
 
-  (this->*prefix_rule)();
+  ValueType value_t = (this->*prefix_rule)();
 
   const InfixRule *infix_rule = &_get_infix_rule(_curr_token_t);
   while (prec <= infix_rule->prec) {
     _advance();
-    const ParseFn rule = infix_rule->rule;
-    (this->*rule)();
+    const ParseInfixFn rule = infix_rule->rule;
+    value_t = (this->*rule)(value_t);
     infix_rule = &_get_infix_rule(_curr_token_t);
   }
+
+  return value_t;
 }
 
-void Parser::_binary() {
-  ValueType left_last_value_t = _last_value_t;
-
+ValueType Parser::_binary(ValueType left_t) {
   TokenType operator_t = _prev_token_t;
   const InfixRule &rule = _get_infix_rule(operator_t);
-  _parse_precedence(static_cast<Precedence>(static_cast<int>(rule.prec) + 1));
-  ValueType right_last_value_t = _last_value_t;
+  ValueType right_t = _parse_precedence(
+      static_cast<Precedence>(static_cast<int>(rule.prec) + 1));
 
-  ValueType expected_last_value_t = ValueType::Invalid;
+  ValueType expected_t = ValueType::Invalid;
   ValueType return_t = ValueType::Invalid;
   switch (operator_t) {
   case TokenType::Plus:
-    expected_last_value_t = ValueType::Number;
+    expected_t = ValueType::Num;
     _emit_byte(OpCode::Add);
-    return_t = ValueType::Number;
+    return_t = ValueType::Num;
     break;
   case TokenType::Minus:
-    expected_last_value_t = ValueType::Number;
+    expected_t = ValueType::Num;
     _emit_byte(OpCode::Negate);
     _emit_byte(OpCode::Add);
-    return_t = ValueType::Number;
+    return_t = ValueType::Num;
     break;
   case TokenType::Star:
-    expected_last_value_t = ValueType::Number;
+    expected_t = ValueType::Num;
     _emit_byte(OpCode::Multiply);
-    return_t = ValueType::Number;
+    return_t = ValueType::Num;
     break;
   case TokenType::Slash:
-    expected_last_value_t = ValueType::Number;
+    expected_t = ValueType::Num;
     _emit_byte(OpCode::Divide);
-    return_t = ValueType::Number;
+    return_t = ValueType::Num;
     break;
   case TokenType::BangEqual:
-    expected_last_value_t = ValueType::Number;
+    expected_t = ValueType::Num;
     _emit_byte(OpCode::Equal);
     _emit_byte(OpCode::Not);
     return_t = ValueType::Bool;
     break;
   case TokenType::EqualEqual:
-    expected_last_value_t = ValueType::Number;
+    expected_t = ValueType::Num;
     _emit_byte(OpCode::Equal);
     return_t = ValueType::Bool;
     break;
   case TokenType::Greater:
-    expected_last_value_t = ValueType::Number;
+    expected_t = ValueType::Num;
     _emit_byte(OpCode::Greater);
     return_t = ValueType::Bool;
     break;
   case TokenType::GreaterEqual:
-    expected_last_value_t = ValueType::Number;
+    expected_t = ValueType::Num;
     _emit_byte(OpCode::Less);
     _emit_byte(OpCode::Not);
     return_t = ValueType::Bool;
     break;
   case TokenType::Less:
-    expected_last_value_t = ValueType::Number;
+    expected_t = ValueType::Num;
     _emit_byte(OpCode::Less);
     return_t = ValueType::Bool;
     break;
   case TokenType::LessEqual:
-    expected_last_value_t = ValueType::Number;
+    expected_t = ValueType::Num;
     _emit_byte(OpCode::Greater);
     _emit_byte(OpCode::Not);
     return_t = ValueType::Bool;
     break;
   case TokenType::Or:
-    expected_last_value_t = ValueType::Bool;
+    expected_t = ValueType::Bool;
     _emit_byte(OpCode::Or);
     return_t = ValueType::Bool;
     break;
   case TokenType::And:
-    expected_last_value_t = ValueType::Bool;
+    expected_t = ValueType::Bool;
     _emit_byte(OpCode::And);
     return_t = ValueType::Bool;
     break;
@@ -207,17 +207,17 @@ void Parser::_binary() {
 
   const char *expect_left_message = nullptr;
   const char *expect_right_message = nullptr;
-  if (expected_last_value_t == ValueType::Bool) {
+  if (expected_t == ValueType::Bool) {
     expect_left_message = expect_bool_left_operand;
     expect_right_message = expect_bool_right_operand;
-  } else if (expected_last_value_t == ValueType::Number) {
+  } else if (expected_t == ValueType::Num) {
     expect_left_message = expect_number_left_operand;
     expect_right_message = expect_number_right_operand;
   }
-  _type_error(expected_last_value_t, left_last_value_t, expect_left_message);
-  _type_error(expected_last_value_t, right_last_value_t, expect_right_message);
+  _type_error(expected_t, left_t, expect_left_message);
+  _type_error(expected_t, right_t, expect_right_message);
 
-  _last_value_t = return_t;
+  return return_t;
 }
 
 Parser::Parser(Scanner &scanner, ByteCode &byte_code)
@@ -233,24 +233,61 @@ bool Parser::Parse() {
   return !_had_error;
 }
 
+void GuiSE::Parser::_identifier(std::string &identifier) {
+  if (_match(TokenType::Identifier)) {
+    identifier = std::string(_prev_token.start, _prev_token.length);
+  } else {
+    _error_at_current("Expect identifier.");
+  }
+}
+
+void GuiSE::Parser::_type_specifier(ValueType &value_t) {
+  switch (_curr_token_t) {
+  case TokenType::TypeBool:
+    value_t = ValueType::Bool;
+    _advance();
+    break;
+  case TokenType::TypeInt:
+    value_t = ValueType::Int;
+    _advance();
+    break;
+  case TokenType::TypeNum:
+    value_t = ValueType::Num;
+    _advance();
+    break;
+  case TokenType::TypeStr:
+    value_t = ValueType::Str;
+    _advance();
+    break;
+  default:
+    value_t = ValueType::Void;
+  }
+}
+
 void Parser::_declaration() { _statement(); }
 
 void Parser::_binding_declaration() {}
 
 void Parser::_global_declaration() {
+  std::string identifier;
+  _identifier(identifier);
+  _consume(TokenType::Colon, "Expect ':'.");
   if (_match(TokenType::Fn)) {
-    _fn_declaration();
+    _fn_declaration(identifier);
   } else {
     _error_at_current("Expect global declaration.");
   }
 }
 
-void Parser::_fn_declaration() {
-    _match(TokenType::Identifier);
+void Parser::_fn_declaration(const std::string &identifier) {
+  ValueType return_type;
+  _type_specifier(return_type);
+  _byte_code->AddFunction(identifier);
   _consume(TokenType::OpenBrace, "Expect '{'.");
   while (!_match(TokenType::CloseBrace)) {
     _declaration();
   }
+  _emit_byte(OpCode::Return);
 }
 
 void Parser::_type_declaration() {}
@@ -264,60 +301,59 @@ void Parser::_statement() {
 }
 
 void Parser::_log_statement() {
-  _expression();
-  _type_error(ValueType::Str, _last_value_t, "Exoect value of type str");
+  ValueType print_value_t = _expression();
+  _type_error(ValueType::Str, print_value_t, "Expect value of type str");
   _consume(TokenType::SemiColon, "Expect ';' after value.");
   _emit_byte(OpCode::Log);
 }
 
-void Parser::_expression() { _parse_precedence(Precedence::Assignment); }
-
-void Parser::_grouping() {
-  _expression();
-  _consume(TokenType::CloseParen, "Expect ')' after expression.");
+ValueType Parser::_expression() {
+  return _parse_precedence(Precedence::Assignment);
 }
 
-void Parser::_literal() {
+ValueType Parser::_grouping() {
+  ValueType value_t = _expression();
+  _consume(TokenType::CloseParen, "Expect ')' after expression.");
+  return value_t;
+}
+
+ValueType Parser::_literal() {
   switch (_prev_token_t) {
   case TokenType::True:
     _emit_byte(OpCode::True);
-    _last_value_t = ValueType::Bool;
-    break;
+    return ValueType::Bool;
   case TokenType::False:
     _emit_byte(OpCode::False);
-    _last_value_t = ValueType::Bool;
-    break;
+    return ValueType::Bool;
   }
 }
 
-void Parser::_number() {
+ValueType Parser::_number() {
   Value value = strtod(_prev_token.start, nullptr);
   _emit_constant(value);
 
-  _last_value_t = ValueType::Number;
+  return ValueType::Num;
 }
 
-void Parser::_string() {
+ValueType Parser::_string() {
   _emit_constant(new Str(_prev_token.start + 1, _prev_token.length - 2));
 
-  _last_value_t = ValueType::Str;
+  return ValueType::Str;
 }
 
-void Parser::_unary() {
+ValueType Parser::_unary() {
   TokenType operator_t = _prev_token_t;
-
-  _parse_precedence(Precedence::Unary);
-  ValueType value_t = _last_value_t;
+  ValueType value_t = _parse_precedence(Precedence::Unary);
 
   switch (operator_t) {
   case TokenType::Minus:
-    _type_error(ValueType::Number, value_t, "Expect number type operand.");
+    _type_error(ValueType::Num, value_t, "Expect number type operand.");
     _emit_byte(OpCode::Negate);
-    break;
+    return ValueType::Num;
   case TokenType::Bang:
     _type_error(ValueType::Bool, value_t, "Expect bool type operand.");
     _emit_byte(OpCode::Not);
-    break;
+    return ValueType::Bool;
   }
 }
 

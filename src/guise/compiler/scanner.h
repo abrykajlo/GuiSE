@@ -30,11 +30,11 @@ enum class TokenType {
   LessEqual,
   // literals
   Number,
+  Integer,
   String,
   Identifier,
   // keywords
   And,
-  BoolType,
   Cmpt,
   Else,
   If,
@@ -42,12 +42,14 @@ enum class TokenType {
   Fn,
   For,
   Log,
-  NumberType,
   Or,
-  StrType,
   Return,
   True,
   Type,
+  TypeBool,
+  TypeInt,
+  TypeStr,
+  TypeNum,
   While,
   // terminating tokens
   Error,
@@ -75,7 +77,7 @@ private:
   char _peek();
   char _peek_next();
 
-  TokenType _number(Token &token);
+  TokenType _integer_or_number(Token &token);
   TokenType _error_token(const char *error, Token &token);
   TokenType _make_token(TokenType token_t, Token &token);
   TokenType _string(Token &token);

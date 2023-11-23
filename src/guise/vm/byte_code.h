@@ -11,8 +11,8 @@ class ByteCode {
 public:
   void Write(uint8_t byte);
 
-  void AddFunction(const char* function_name);
-  const uint8_t* GetFunction(const char* function_name) const;
+  void AddFunction(const std::string &function_name);
+  const uint8_t *GetFunction(const std::string &function_name) const;
 
   int AddConstant(Value value);
   Value GetConstant(int index) const;

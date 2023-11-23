@@ -11,30 +11,38 @@ class Str;
 using Bool = bool;
 
 // floating
-using Number = double;
+using Num = double;
+
+// integer
+using Int = int8_t;
 
 enum class ValueType : uint8_t {
   Invalid,
   Bool,
-  Number,
+  Num,
+  Int,
   Str,
+  Void,
 };
 
 struct Value {
+  ValueType type;
+
   union {
     Bool bool_;
-    Number number;
+    Num num;
+    Int int_;
     Str *str;
   };
 
-  Value() : number(0) {}
+  Value() : type(ValueType::Invalid), num(0) {}
 
-  Value(Bool boolean) : bool_(boolean) {}
+  Value(Bool boolean) : type(ValueType::Bool), bool_(boolean) {}
 
-  Value(Number number) : number(number) {}
+  Value(Num num) : type(ValueType::Num), num(num) {}
 
-  Value(Str *str) : str(str) {}
+  Value(Str *str) : type(ValueType::Str), str(str) {}
 };
 
-void log_value(ValueType type, Value value);
+void log_value(Value value);
 } // namespace GuiSE

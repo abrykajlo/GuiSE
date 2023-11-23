@@ -35,10 +35,12 @@ private:
   bool _match(TokenType token_t);
 
   // declarations
+  void _identifier(std::string &identifier);
+  void _type_specifier(ValueType &value_t);
   void _declaration();
   void _binding_declaration();
   void _global_declaration();
-  void _fn_declaration();
+  void _fn_declaration(const std::string &identifier);
   void _type_declaration();
   void _cmpt_declaration();
 
@@ -47,25 +49,26 @@ private:
   void _log_statement();
 
   // expressions
-  void _expression();
-  void _binary();
-  void _grouping();
-  void _literal();
-  void _number();
-  void _string();
-  void _unary();
+  ValueType _binary(ValueType left_t);
+  ValueType _expression();
+  ValueType _grouping();
+  ValueType _literal();
+  ValueType _number();
+  ValueType _string();
+  ValueType _unary();
 
   // parse rules
-  using ParseFn = void (Parser::*)();
+  using ParsePrefixFn = ValueType (Parser::*)();
+  using ParseInfixFn = ValueType (Parser::*)(ValueType);
 
   struct InfixRule {
-    ParseFn rule = nullptr;
+    ParseInfixFn rule = nullptr;
     Precedence prec = Precedence::None;
   };
 
-  ParseFn _get_prefix_rule(TokenType token_t) const;
+  ParsePrefixFn _get_prefix_rule(TokenType token_t) const;
   const InfixRule &_get_infix_rule(TokenType token_t) const;
-  void _parse_precedence(Precedence prec);
+  ValueType _parse_precedence(Precedence prec);
 
   // emitters
   void _emit_byte(uint8_t byte);
@@ -90,7 +93,6 @@ private:
   Token _prev_token;
   TokenType _curr_token_t = TokenType::Invalid;
   TokenType _prev_token_t = TokenType::Invalid;
-  ValueType _last_value_t = ValueType::Invalid;
   bool _had_error = false;
   bool _panic_mode = false;
 };

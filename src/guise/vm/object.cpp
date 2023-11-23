@@ -2,8 +2,20 @@
 
 using namespace GuiSE;
 
-Str::Str(const char *chars, int length) : _str(chars, length) {}
+Obj::Obj() {}
 
-GuiSE::Str::~Str() {}
+Obj::~Obj() {
+  if (_next != nullptr)
+    delete _next;
+}
 
-const std::string &Str::get_str() const { return _str; }
+Str::Str(const char *chars, int length)
+    : _length(length), _chars(new char[length + 1]) {
+  memcpy(_chars, chars, length);
+  _chars[_length] = '\0';
+}
+
+Str::~Str() {
+  if (_chars != nullptr)
+    delete[] _chars;
+}

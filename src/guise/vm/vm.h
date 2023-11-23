@@ -6,6 +6,7 @@
 
 namespace GuiSE {
 class ByteCode;
+class Obj;
 
 enum class InterpretResult { Ok, CompileError, RuntimeError };
 
@@ -13,12 +14,11 @@ class VM {
 public:
   InterpretResult Run();
 
-  InterpretResult Call(const char* function_name);
+  InterpretResult Call(const char *function_name);
 
-  void set_byte_code(const ByteCode& byte_code);
+  void set_byte_code(const ByteCode &byte_code);
 
 private:
-
   template <typename T> inline T _read() { return static_cast<T>(_read()); }
   inline uint8_t _read() { return *_ip++; }
 

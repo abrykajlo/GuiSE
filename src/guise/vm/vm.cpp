@@ -7,18 +7,18 @@ using namespace GuiSE;
 
 namespace {
 // basic arithmetic operator
-inline Number op_plus(Number a, Number b) { return a + b; }
+inline Num op_plus(Num a, Num b) { return a + b; }
 
-inline Number op_multiply(Number a, Number b) { return a * b; }
+inline Num op_multiply(Num a, Num b) { return a * b; }
 
-inline Number op_divide(Number a, Number b) { return a / b; }
+inline Num op_divide(Num a, Num b) { return a / b; }
 
 // comparison operators
-inline Bool op_equal(Number a, Number b) { return a == b; }
+inline Bool op_equal(Num a, Num b) { return a == b; }
 
-inline Bool op_greater(Number a, Number b) { return a > b; }
+inline Bool op_greater(Num a, Num b) { return a > b; }
 
-inline Bool op_less(Number a, Number b) { return a < b; }
+inline Bool op_less(Num a, Num b) { return a < b; }
 
 // boolean operations
 inline Bool op_or(Bool a, Bool b) { return a || b; }
@@ -26,23 +26,20 @@ inline Bool op_or(Bool a, Bool b) { return a || b; }
 inline Bool op_and(Bool a, Bool b) { return a && b; }
 } // namespace
 
-InterpretResult VM::Call(const char* function_name)
-{
-    const uint8_t* ip = 
-    _byte_code->GetFunction(function_name);
-    if (ip == nullptr) {
+InterpretResult VM::Call(const char *function_name) {
+  const uint8_t *ip = _byte_code->GetFunction(function_name);
+  if (ip == nullptr) {
     printf("Function %s does not exist.", function_name);
     return InterpretResult::RuntimeError;
-    }
+  }
 
-    _ip = ip;
-    return Run();
+  _ip = ip;
+  return Run();
 }
 
-void GuiSE::VM::set_byte_code(const ByteCode& byte_code)
-{
-        _byte_code = &byte_code;
-        _ip = &_byte_code->get_byte_code()[0];
+void GuiSE::VM::set_byte_code(const ByteCode &byte_code) {
+  _byte_code = &byte_code;
+  _ip = &_byte_code->get_byte_code()[0];
 }
 
 InterpretResult VM::Run() {
@@ -55,16 +52,16 @@ InterpretResult VM::Run() {
       _push(value);
     } break;
     case OpCode::Add:
-      _binary_op<&Value::number>(op_plus);
+      _binary_op<&Value::num>(op_plus);
       break;
     case OpCode::Negate:
-      _push(-_pop().number);
+      _push(-_pop().num);
       break;
     case OpCode::Multiply:
-      _binary_op<&Value::number>(op_multiply);
+      _binary_op<&Value::num>(op_multiply);
       break;
     case OpCode::Divide:
-      _binary_op<&Value::number>(op_divide);
+      _binary_op<&Value::num>(op_divide);
       break;
     case OpCode::True:
       _push(true);
@@ -76,13 +73,13 @@ InterpretResult VM::Run() {
       _push(!_pop().bool_);
       break;
     case OpCode::Equal:
-      _binary_op<&Value::number>(op_equal);
+      _binary_op<&Value::num>(op_equal);
       break;
     case OpCode::Greater:
-      _binary_op<&Value::number>(op_greater);
+      _binary_op<&Value::num>(op_greater);
       break;
     case OpCode::Less:
-      _binary_op<&Value::number>(op_less);
+      _binary_op<&Value::num>(op_less);
       break;
     case OpCode::And:
       _binary_op<&Value::bool_>(op_and);
@@ -91,8 +88,7 @@ InterpretResult VM::Run() {
       _binary_op<&Value::bool_>(op_or);
       break;
     case OpCode::Log: {
-      ValueType type = _read<ValueType>();
-      log_value(type, _pop());
+      log_value(_pop());
     } break;
     case OpCode::Return: {
       return InterpretResult::Ok;

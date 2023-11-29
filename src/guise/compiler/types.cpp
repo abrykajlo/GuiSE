@@ -2,8 +2,8 @@
 
 #include <guise/vm/object.h>
 
-void GuiSE::log_value(Value value) {
-  switch (value.type) {
+void GuiSE::log_value(ValueType type, Value value) {
+  switch (type) {
   case ValueType::Bool:
     printf(value.bool_ ? "true" : "false");
     break;

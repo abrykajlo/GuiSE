@@ -19,6 +19,7 @@ enum class OpCode : uint8_t {
   And,
   Or,
   Log,
+  TypeArg,
   Return,
 };
 } // namespace GuiSE

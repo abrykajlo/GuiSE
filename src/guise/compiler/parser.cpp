@@ -8,33 +8,33 @@
 using namespace GuiSE;
 
 namespace {
-const char *expect_number_operand = "Expect number type operand.";
+const char *expect_num_operand = "Expect num type operand.";
 const char *expect_bool_operand = "Expect bool type operand.";
 
-const char *expect_number_left_operand = "Expect number type left operand.";
-const char *expect_number_right_operand = "Expect number type right operand.";
+const char *expect_num_left_operand = "Expect num type left operand.";
+const char *expect_num_right_operand = "Expect num type right operand.";
 
 const char *expect_bool_left_operand = "Expect bool type left operand.";
 const char *expect_bool_right_operand = "Expect bool type right operand.";
 } // namespace
 
 void Parser::_advance() {
-  _prev_token_t = _curr_token_t;
+  _prev_token_type = _curr_token_type;
   _prev_token = _curr_token;
 
   for (;;) {
-    _curr_token_t = _scanner.ScanToken(_curr_token);
-    if (_curr_token_t != TokenType::Error)
+    _curr_token_type = _scanner.ScanToken(_curr_token);
+    if (_curr_token_type != TokenType::Error)
       break;
 
     _error_at_current(_curr_token.start);
   }
 }
 
-bool Parser::_check(TokenType token_t) { return _curr_token_t == token_t; }
+bool Parser::_check(TokenType token_type) { return _curr_token_type == token_type; }
 
-void Parser::_consume(TokenType type, const char *message) {
-  if (_curr_token_t == type) {
+void Parser::_consume(TokenType token_type, const char *message) {
+  if (_curr_token_type == token_type) {
     _advance();
     return;
   }
@@ -42,8 +42,8 @@ void Parser::_consume(TokenType type, const char *message) {
   _error_at_current(message);
 }
 
-bool Parser::_match(TokenType token_t) {
-  if (_check(token_t)) {
+bool Parser::_match(TokenType token_type) {
+  if (_check(token_type)) {
     _advance();
     return true;
   }
@@ -57,8 +57,8 @@ void Parser::_type_error(ValueType expected, ValueType type,
   }
 }
 
-Parser::ParsePrefixFn Parser::_get_prefix_rule(TokenType token_t) const {
-  switch (token_t) {
+Parser::ParsePrefixFn Parser::_get_prefix_rule(TokenType token_type) const {
+  switch (token_type) {
   case TokenType::True:
   case TokenType::False:
     return &Parser::_literal;
@@ -76,7 +76,7 @@ Parser::ParsePrefixFn Parser::_get_prefix_rule(TokenType token_t) const {
   return nullptr;
 }
 
-const Parser::InfixRule &Parser::_get_infix_rule(TokenType token_t) const {
+const Parser::InfixRule &Parser::_get_infix_rule(TokenType token_type) const {
   static InfixRule or_rule = {&Parser::_binary, Precedence::Or};
   static InfixRule and_rule{&Parser::_binary, Precedence::And};
   static InfixRule equality_rule = {&Parser::_binary, Precedence::Equality};
@@ -84,7 +84,7 @@ const Parser::InfixRule &Parser::_get_infix_rule(TokenType token_t) const {
   static InfixRule term_rule = {&Parser::_binary, Precedence::Term};
   static InfixRule factor_rule = {&Parser::_binary, Precedence::Factor};
 
-  switch (token_t) {
+  switch (token_type) {
   case TokenType::Or:
     return or_rule;
   case TokenType::And:
@@ -111,34 +111,34 @@ const Parser::InfixRule &Parser::_get_infix_rule(TokenType token_t) const {
 
 ValueType Parser::_parse_precedence(Precedence prec) {
   _advance();
-  ParsePrefixFn prefix_rule = _get_prefix_rule(_prev_token_t);
+  ParsePrefixFn prefix_rule = _get_prefix_rule(_prev_token_type);
   if (prefix_rule == nullptr) {
     _error("Expect expression.");
     return ValueType::Invalid;
   }
 
-  ValueType value_t = (this->*prefix_rule)();
+  ValueType type = (this->*prefix_rule)();
 
-  const InfixRule *infix_rule = &_get_infix_rule(_curr_token_t);
+  const InfixRule *infix_rule = &_get_infix_rule(_curr_token_type);
   while (prec <= infix_rule->prec) {
     _advance();
     const ParseInfixFn rule = infix_rule->rule;
-    value_t = (this->*rule)(value_t);
-    infix_rule = &_get_infix_rule(_curr_token_t);
+    type = (this->*rule)(type);
+    infix_rule = &_get_infix_rule(_curr_token_type);
   }
 
-  return value_t;
+  return type;
 }
 
 ValueType Parser::_binary(ValueType left_t) {
-  TokenType operator_t = _prev_token_t;
-  const InfixRule &rule = _get_infix_rule(operator_t);
+  TokenType op_token_type = _prev_token_type;
+  const InfixRule &rule = _get_infix_rule(op_token_type);
   ValueType right_t = _parse_precedence(
       static_cast<Precedence>(static_cast<int>(rule.prec) + 1));
 
   ValueType expected_t = ValueType::Invalid;
   ValueType return_t = ValueType::Invalid;
-  switch (operator_t) {
+  switch (op_token_type) {
   case TokenType::Plus:
     expected_t = ValueType::Num;
     _emit_byte(OpCode::Add);
@@ -211,8 +211,8 @@ ValueType Parser::_binary(ValueType left_t) {
     expect_left_message = expect_bool_left_operand;
     expect_right_message = expect_bool_right_operand;
   } else if (expected_t == ValueType::Num) {
-    expect_left_message = expect_number_left_operand;
-    expect_right_message = expect_number_right_operand;
+    expect_left_message = expect_num_left_operand;
+    expect_right_message = expect_num_right_operand;
   }
   _type_error(expected_t, left_t, expect_left_message);
   _type_error(expected_t, right_t, expect_right_message);
@@ -233,44 +233,58 @@ bool Parser::Parse() {
   return !_had_error;
 }
 
-void GuiSE::Parser::_identifier(std::string &identifier) {
+bool Parser::_identifier(std::string &identifier) {
   if (_match(TokenType::Identifier)) {
     identifier = std::string(_prev_token.start, _prev_token.length);
-  } else {
-    _error_at_current("Expect identifier.");
+    return true;
   }
+  return false;
 }
 
-void GuiSE::Parser::_type_specifier(ValueType &value_t) {
-  switch (_curr_token_t) {
+ValueType Parser::_type_specifier() {
+  switch (_curr_token_type) {
   case TokenType::TypeBool:
-    value_t = ValueType::Bool;
     _advance();
-    break;
+    return ValueType::Bool;
   case TokenType::TypeInt:
-    value_t = ValueType::Int;
     _advance();
-    break;
+    return ValueType::Int;
   case TokenType::TypeNum:
-    value_t = ValueType::Num;
     _advance();
-    break;
+    return ValueType::Num;
   case TokenType::TypeStr:
-    value_t = ValueType::Str;
     _advance();
-    break;
+    return ValueType::Str;
   default:
-    value_t = ValueType::Void;
+    return ValueType::Void;
   }
 }
 
-void Parser::_declaration() { _statement(); }
+void Parser::_declaration() {
+  std::string identifier;
+  if (_identifier(identifier)) {
+    if (_match(TokenType::Colon)) {
+      ValueType type_spec = _type_specifier();
+      _var_declaration(identifier, type_spec);
+      return;
+    }
+  }
+  _statement();
+}
 
-void Parser::_binding_declaration() {}
+void Parser::_var_declaration(const std::string &identifier,
+                              ValueType type) {
+  ValueType expr_type = _expression();
+  _type_error(type, expr_type,
+              "Incorrect expression type when initializing variable.");
+  _consume(TokenType::SemiColon, "Expect ';'.");
+}
 
 void Parser::_global_declaration() {
   std::string identifier;
-  _identifier(identifier);
+  if (!_identifier(identifier)) {
+    _error_at_current("Expect identifier.");
+  }
   _consume(TokenType::Colon, "Expect ':'.");
   if (_match(TokenType::Fn)) {
     _fn_declaration(identifier);
@@ -280,8 +294,6 @@ void Parser::_global_declaration() {
 }
 
 void Parser::_fn_declaration(const std::string &identifier) {
-  ValueType return_type;
-  _type_specifier(return_type);
   _byte_code->AddFunction(identifier);
   _consume(TokenType::OpenBrace, "Expect '{'.");
   while (!_match(TokenType::CloseBrace)) {
@@ -301,9 +313,13 @@ void Parser::_statement() {
 }
 
 void Parser::_log_statement() {
-  ValueType print_value_t = _expression();
-  _type_error(ValueType::Str, print_value_t, "Expect value of type str");
+  ValueType print_type = _expression();
+  if (print_type == ValueType::Void) {
+    _error("Cannot print void value.");
+  }
   _consume(TokenType::SemiColon, "Expect ';' after value.");
+  _emit_byte(OpCode::TypeArg);
+  _emit_byte(print_type);
   _emit_byte(OpCode::Log);
 }
 
@@ -312,13 +328,13 @@ ValueType Parser::_expression() {
 }
 
 ValueType Parser::_grouping() {
-  ValueType value_t = _expression();
+  ValueType type = _expression();
   _consume(TokenType::CloseParen, "Expect ')' after expression.");
-  return value_t;
+  return type;
 }
 
 ValueType Parser::_literal() {
-  switch (_prev_token_t) {
+  switch (_prev_token_type) {
   case TokenType::True:
     _emit_byte(OpCode::True);
     return ValueType::Bool;
@@ -341,17 +357,19 @@ ValueType Parser::_string() {
   return ValueType::Str;
 }
 
-ValueType Parser::_unary() {
-  TokenType operator_t = _prev_token_t;
-  ValueType value_t = _parse_precedence(Precedence::Unary);
+ValueType Parser::_stringify() { return ValueType(); }
 
-  switch (operator_t) {
+ValueType Parser::_unary() {
+  TokenType op_token_type = _prev_token_type;
+  ValueType type = _parse_precedence(Precedence::Unary);
+
+  switch (op_token_type) {
   case TokenType::Minus:
-    _type_error(ValueType::Num, value_t, "Expect number type operand.");
+    _type_error(ValueType::Num, type, "Expect number type operand.");
     _emit_byte(OpCode::Negate);
     return ValueType::Num;
   case TokenType::Bang:
-    _type_error(ValueType::Bool, value_t, "Expect bool type operand.");
+    _type_error(ValueType::Bool, type, "Expect bool type operand.");
     _emit_byte(OpCode::Not);
     return ValueType::Bool;
   }
@@ -380,13 +398,13 @@ uint8_t Parser::_make_constant(Value value) {
   return static_cast<uint8_t>(constant);
 }
 
-void Parser::_error_at(TokenType token_t, const Token &token,
+void Parser::_error_at(TokenType token_type, const Token &token,
                        const char *message) {
   fprintf(stderr, "[line %d] Error", token.line);
 
-  if (token_t == TokenType::Eof) {
+  if (token_type == TokenType::Eof) {
     fprintf(stderr, " at end");
-  } else if (token_t == TokenType::Error) {
+  } else if (token_type == TokenType::Error) {
     // Nothing.
   } else {
     fprintf(stderr, " at '%.*s'", token.length, token.start);
@@ -397,9 +415,9 @@ void Parser::_error_at(TokenType token_t, const Token &token,
 }
 
 void Parser::_error_at_current(const char *message) {
-  _error_at(_curr_token_t, _curr_token, message);
+  _error_at(_curr_token_type, _curr_token, message);
 }
 
 void Parser::_error(const char *message) {
-  _error_at(_prev_token_t, _prev_token, message);
+  _error_at(_prev_token_type, _prev_token, message);
 }

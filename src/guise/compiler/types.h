@@ -26,8 +26,6 @@ enum class ValueType : uint8_t {
 };
 
 struct Value {
-  ValueType type;
-
   union {
     Bool bool_;
     Num num;
@@ -35,14 +33,16 @@ struct Value {
     Str *str;
   };
 
-  Value() : type(ValueType::Invalid), num(0) {}
+  Value() : bool_(false) {}
 
-  Value(Bool boolean) : type(ValueType::Bool), bool_(boolean) {}
+  Value(Bool bool_) : bool_(bool_) {}
 
-  Value(Num num) : type(ValueType::Num), num(num) {}
+  Value(Num num) : num(num) {}
 
-  Value(Str *str) : type(ValueType::Str), str(str) {}
+  Value(Int int_) : int_(int_) {}
+
+  Value(Str *str) : str(str) {}
 };
 
-void log_value(Value value);
+void log_value(ValueType type, Value value);
 } // namespace GuiSE

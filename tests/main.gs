@@ -1,3 +1,6 @@
+y : num 4.0;
+
 main : fn {
-    log "hello world";
+    x : num 5.0;
+    log x - y;
 }

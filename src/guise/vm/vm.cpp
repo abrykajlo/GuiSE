@@ -3,6 +3,8 @@
 #include "byte_code.h"
 #include "opcode.h"
 
+#include <guise/debug.h>
+
 using namespace GuiSE;
 
 namespace {
@@ -33,17 +35,23 @@ InterpretResult VM::Call(const char *function_name) {
     return InterpretResult::RuntimeError;
   }
 
-  _ip = ip;
-  return Run();
+  _regs.cf++;
+  _regs.cf->fp = _regs.sp;
+  _regs.cf->ip = ip;
+
+  InterpretResult result = Run();
+
+  return result;
 }
 
 void GuiSE::VM::set_byte_code(const ByteCode &byte_code) {
   _byte_code = &byte_code;
-  _ip = &_byte_code->get_byte_code()[0];
+  _regs.cf = _call_stack;
+  _regs.cf->ip = &_byte_code->get_byte_code()[0];
 }
 
 InterpretResult VM::Run() {
-  _reset_stack();
+  _reset();
   for (;;) {
     OpCode op_code;
     switch (op_code = _read<OpCode>()) {
@@ -87,29 +95,37 @@ InterpretResult VM::Run() {
     case OpCode::Or:
       _binary_op<&Value::bool_>(op_or);
       break;
-    case OpCode::Log: {
-      log_value(_pop());
-    } break;
-    case OpCode::Return: {
+    case OpCode::Log:
+      log_value(_regs.tr, _pop());
+      break;
+    case OpCode::TypeArg:
+      _regs.tr = _read<ValueType>();
+      break;
+    case OpCode::Return:
       return InterpretResult::Ok;
-    }
-    case OpCode::NoOp: {
+    case OpCode::NoOp:
       return InterpretResult::Ok;
-    }
+#ifdef GUISE_DEBUG
+    default:
+      printf("opcode %d not implemented.", op_code);
+      return InterpretResult::RuntimeError;
+#endif
     }
   }
-
-  return InterpretResult::Ok;
 }
 
-void VM::_reset_stack() { _stack_top = _stack; }
+GuiSE::VM::VM()
+{
+}
+
+void VM::_reset() { _regs.sp = _stack; }
 
 void VM::_push(Value value) {
-  *_stack_top = value;
-  _stack_top++;
+  *_regs.sp = value;
+  _regs.sp++;
 }
 
 Value VM::_pop() {
-  _stack_top--;
-  return *_stack_top;
+  _regs.sp--;
+  return *_regs.sp;
 }

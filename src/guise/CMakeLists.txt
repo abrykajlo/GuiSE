@@ -1,4 +1,4 @@
-set(GUISE_COMMON_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/debug.h ${CMAKE_CURRENT_SOURCE_DIR}/hash_map.h)
+set(GUISE_COMMON_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/debug.h)
 
 add_subdirectory(compiler)
 add_subdirectory(vm)

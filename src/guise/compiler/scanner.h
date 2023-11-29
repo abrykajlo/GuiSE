@@ -32,6 +32,9 @@ enum class TokenType {
   Number,
   Integer,
   String,
+  StringFnOpen,
+  StringFnMiddle,
+  StringFnClose,
   Identifier,
   // keywords
   And,
@@ -79,8 +82,9 @@ private:
 
   TokenType _integer_or_number(Token &token);
   TokenType _error_token(const char *error, Token &token);
-  TokenType _make_token(TokenType token_t, Token &token);
+  TokenType _make_token(TokenType token_type, Token &token);
   TokenType _string(Token &token);
+  TokenType _string_fn(Token &token);
   TokenType _identifier(Token &token);
   TokenType _identifier_t();
   TokenType _check_keyword(int start, int length, const char *rest,
@@ -92,5 +96,7 @@ private:
   const char *_start;
   const char *_current;
   int _line = 1;
+  bool _scanning_string_fn = false;
+  bool _last_token_fn = false;
 };
 } // namespace GuiSE

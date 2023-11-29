@@ -3,12 +3,28 @@
 #include <guise/compiler/types.h>
 
 #define STACK_MAX 256
+#define FRAMES_MAX 64
 
 namespace GuiSE {
 class ByteCode;
 class Obj;
 
 enum class InterpretResult { Ok, CompileError, RuntimeError };
+
+struct CallFrame {
+  const uint8_t *ip = nullptr;
+  const Value *fp = nullptr;
+};
+
+struct Registers {
+  const uint8_t *ip = nullptr;       // instruction pointer
+  Value *fp = nullptr;               // frame pointer
+  Value *sp = nullptr;               // stack pointer
+  CallFrame *cf = nullptr;           // call frame
+  Value va;                          // a register
+  Value vb;                          // b register
+  ValueType tr = ValueType::Invalid; // type register
+};
 
 class VM {
 public:
@@ -20,9 +36,9 @@ public:
 
 private:
   template <typename T> inline T _read() { return static_cast<T>(_read()); }
-  inline uint8_t _read() { return *_ip++; }
+  inline uint8_t _read() { return *_regs.ip++; }
 
-  void _reset_stack();
+  void _reset();
   void _push(Value value);
   Value _pop();
 
@@ -32,9 +48,9 @@ private:
     _push(f(a, b));
   }
 
+  Registers _regs;
   const ByteCode *_byte_code = nullptr;
-  const uint8_t *_ip = nullptr;
   Value _stack[STACK_MAX];
-  Value *_stack_top = _stack;
+  CallFrame _call_stack[FRAMES_MAX];
 };
 } // namespace GuiSE

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "binding.h"
 #include "scanner.h"
 #include "types.h"
 
@@ -30,15 +31,15 @@ public:
 private:
   // parser basic management
   void _advance();
-  bool _check(TokenType token_t);
-  void _consume(TokenType token_t, const char *message);
-  bool _match(TokenType token_t);
+  bool _check(TokenType token_type);
+  void _consume(TokenType token_type, const char *message);
+  bool _match(TokenType token_type);
 
   // declarations
-  void _identifier(std::string &identifier);
-  void _type_specifier(ValueType &value_t);
+  bool _identifier(std::string &identifier);
+  ValueType _type_specifier();
   void _declaration();
-  void _binding_declaration();
+  void _var_declaration(const std::string &identifier, ValueType value_t);
   void _global_declaration();
   void _fn_declaration(const std::string &identifier);
   void _type_declaration();
@@ -55,6 +56,7 @@ private:
   ValueType _literal();
   ValueType _number();
   ValueType _string();
+  ValueType _stringify();
   ValueType _unary();
 
   // parse rules
@@ -66,8 +68,8 @@ private:
     Precedence prec = Precedence::None;
   };
 
-  ParsePrefixFn _get_prefix_rule(TokenType token_t) const;
-  const InfixRule &_get_infix_rule(TokenType token_t) const;
+  ParsePrefixFn _get_prefix_rule(TokenType token_type) const;
+  const InfixRule &_get_infix_rule(TokenType token_type) const;
   ValueType _parse_precedence(Precedence prec);
 
   // emitters
@@ -81,7 +83,7 @@ private:
   uint8_t _make_constant(Value value);
 
   // errors
-  void _error_at(TokenType token_t, const Token &token, const char *message);
+  void _error_at(TokenType token_type, const Token &token, const char *message);
   void _error_at_current(const char *message);
   void _error(const char *message);
 
@@ -91,9 +93,10 @@ private:
   ByteCode *_byte_code;
   Token _curr_token;
   Token _prev_token;
-  TokenType _curr_token_t = TokenType::Invalid;
-  TokenType _prev_token_t = TokenType::Invalid;
+  TokenType _curr_token_type = TokenType::Invalid;
+  TokenType _prev_token_type = TokenType::Invalid;
   bool _had_error = false;
   bool _panic_mode = false;
+  ScopeStack _scope_stack;
 };
 } // namespace GuiSE

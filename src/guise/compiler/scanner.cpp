@@ -32,6 +32,15 @@ TokenType Scanner::ScanToken(Token &token) {
   if (is_digit(c))
     return _integer_or_number(token);
 
+  // Scanning string fn
+  if (_last_token_fn && c == '"') {
+    _scanning_string_fn = true;
+    return _string_fn(token);
+  }
+
+  if (_scanning_string_fn && c == '}')
+    return _string_fn(token);
+
   if (c == '"')
     return _string(token);
 
@@ -87,18 +96,20 @@ TokenType Scanner::_error_token(const char *error, Token &token) {
   token.start = error;
   token.length = strlen(error);
   token.line = _line;
+  _last_token_fn = false;
 
   return TokenType::Error;
 }
 
 bool Scanner::_is_at_end() { return *_current == '\0'; }
 
-TokenType Scanner::_make_token(TokenType token_t, Token &token) {
+TokenType Scanner::_make_token(TokenType token_type, Token &token) {
   token.start = _start;
   token.length = _current - _start;
   token.line = _line;
+  _last_token_fn = token_type == TokenType::Fn;
 
-  return token_t;
+  return token_type;
 }
 
 TokenType Scanner::_integer_or_number(Token &token) {
@@ -168,6 +179,41 @@ TokenType Scanner::_string(Token &token) {
   return _make_token(TokenType::String, token);
 }
 
+TokenType GuiSE::Scanner::_string_fn(Token &token) {
+  while (!_is_at_end() && _peek() != '"' && _peek() != '{') {
+    if (_peek() == '\n')
+      return _error_token(error_unterminated_string, token);
+
+    _advance();
+  }
+
+  if (_is_at_end())
+    return _error_token(error_unterminated_string, token);
+
+  TokenType token_type = TokenType::String;
+  switch (*_start) {
+  case '"':
+    if (_peek() == '{')
+      token_type = TokenType::StringFnOpen;
+    break;
+  case '}':
+    switch (_peek()) {
+    case '{':
+      token_type = TokenType::StringFnMiddle;
+      break;
+    case '"':
+      token_type = TokenType::StringFnClose;
+      break;
+    }
+  }
+
+  if (token_type == TokenType::String || token_type == TokenType::StringFnClose)
+    _scanning_string_fn = false;
+
+  _advance();
+  return _make_token(token_type, token);
+}
+
 TokenType Scanner::_identifier(Token &token) {
   while (is_alpha(_peek()) || is_digit(_peek()))
     _advance();
@@ -209,7 +255,7 @@ TokenType Scanner::_identifier_t() {
   case 'l':
     return _check_keyword(1, 2, "og", TokenType::Log);
   case 'n':
-    return _check_keyword(1, 5, "umber", TokenType::TypeNum);
+    return _check_keyword(1, 2, "um", TokenType::TypeNum);
   case 'o':
     return _check_keyword(1, 1, "r", TokenType::Or);
   case 's':

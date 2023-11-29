@@ -34,7 +34,9 @@ void run_file(VM &vm, const char *file_name) {
   ss << file.rdbuf();
 
   ByteCode byte_code;
-  compile(ss.str().c_str(), byte_code);
+  if (!compile(ss.str().c_str(), byte_code)) {
+    return;
+  }
   vm.set_byte_code(byte_code);
   vm.Call("main");
 }

@@ -1,5 +1,5 @@
 MAKE_SOURCES(GUISE_COMPILER_SOURCES
-    H_CPP binding compiler parser scanner types
+    H_CPP binding compiler disassembler parser scanner types
 )
 
 add_library(Compiler ${GUISE_COMPILER_SOURCES} ${GUISE_COMMON_HEADERS})

@@ -3,69 +3,90 @@
 #include "types.h"
 
 #include <map>
-#include <memory>
-#include <stack>
+#include <set>
 #include <string>
-#include <utility>
+#include <vector>
 
 namespace GuiSE {
-class Binding {
+using BindingId = std::string;
+
+class VarBinding {
 public:
-  using Id = std::string;
-
-  Binding(const Id &id);
-  virtual ~Binding() = default;
-
-  inline const Id &get_id() const { return _id; }
-
-private:
-  const Id _id;
-};
-
-class VarBinding : Binding {
-public:
-  VarBinding(const Id &id, ValueType type, int offset);
-  virtual ~VarBinding() = default;
+  VarBinding() = default;
+  VarBinding(ValueType type, int offset);
+  ~VarBinding() = default;
 
   inline ValueType get_type() const { return _type; }
   inline int get_offset() const { return _offset; }
 
 private:
-  ValueType _type;
-  int _offset;
+  ValueType _type = ValueType::Invalid;
+  int _offset = -1;
 };
 
-class FnBinding : Binding {
-public:
-	FnBinding(const Id& id, ValueType return_type, int byte_offset);
+struct Param {
+  const std::string id;
+  ValueType type;
+};
 
-	inline ValueType get_return_type() const { return _return_type; }
-	inline int get_byte_offset() const { return _byte_offset; }
+class FnBinding {
+public:
+  FnBinding(int constant, std::vector<Param> &params, ValueType return_type);
+
+  inline ValueType get_return_type() const { return _return_type; }
+  inline int get_byte_offset() const { return _constant; }
 
 private:
+  std::vector<Param> _params;
+  int _constant;
   ValueType _return_type;
-  int _byte_offset;
 };
 
 class Scope {
 public:
-  Scope(int offset = 0);
+  Scope();
+  Scope(const Scope &scope);
 
-  bool AddVar(const std::string &id, ValueType type);
-  const VarBinding *FindVar(const std::string &id);
+  bool AddVar(const BindingId &id, ValueType type);
+  const VarBinding *FindVar(const BindingId &id) const;
+
+  using VarBindingMap = std::map<BindingId, VarBinding>;
+
+  VarBindingMap::const_iterator begin() const;
+  VarBindingMap::const_iterator end() const;
 
 private:
-	std::map<Binding::Id, std::unique_ptr<VarBinding>> _var_bindings;
+  VarBindingMap _var_bindings;
   int _stack_frame_offset;
 };
 
 class ScopeStack {
 public:
-  bool AddBinding(const std::string &id, std::unique_ptr<Binding>&& binding);
-  const Binding *FindBinding(const std::string &id) const;
+  bool AddFn(const BindingId &id, int byte_offset, std::vector<Param> &params,
+             ValueType return_type);
+  bool AddVar(const BindingId &id, ValueType type);
+
+  const FnBinding *FindFn(const BindingId &id);
+  const VarBinding *FindVar(const BindingId &id, bool &is_global) const;
+
+  void PushFnScope();
+  void PushBlockScope();
+
+  void Pop();
 
 private:
-  std::stack<Scope> _scopes;
-  std::map<Binding::Id, std::unique_ptr<Binding>> _global_bindings;
+  inline bool _has_binding(const BindingId &id) const {
+    return _unique_ids.find(id) != _unique_ids.end();
+  }
+
+  inline void _add_binding(const BindingId &id) { _unique_ids.insert(id); }
+
+  std::vector<Scope> _stack;
+  std::set<BindingId> _unique_ids;
+
+  // global bindings
+  int _global_offset = 0;
+  std::map<BindingId, FnBinding> _fn_bindings;
+  std::map<BindingId, VarBinding> _var_bindings;
 };
 } // namespace GuiSE

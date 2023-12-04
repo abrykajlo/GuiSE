@@ -38,6 +38,7 @@ void run_file(VM &vm, const char *file_name) {
     return;
   }
   vm.set_byte_code(byte_code);
+  vm.RunGlobal();
   vm.Call("main");
 }
 } // namespace

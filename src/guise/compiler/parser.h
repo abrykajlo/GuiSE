@@ -34,29 +34,30 @@ private:
   bool _check(TokenType token_type);
   void _consume(TokenType token_type, const char *message);
   bool _match(TokenType token_type);
+  bool _match_identifier(std::string &identifier);
 
   // declarations
-  bool _identifier(std::string &identifier);
   ValueType _type_specifier();
   void _declaration();
-  void _var_declaration(const std::string &identifier, ValueType value_t);
+  void _var_declaration(std::string &identifier, ValueType value_t);
   void _global_declaration();
-  void _fn_declaration(const std::string &identifier);
+  void _fn_declaration(std::string &identifier, std::vector<Param> &params);
   void _type_declaration();
   void _cmpt_declaration();
 
   // statements
-  void _statement();
-  void _log_statement();
+  void _stmt();
+  void _expr_stmt();
+  void _log_stmt();
 
   // expressions
-  ValueType _binary(ValueType left_t);
-  ValueType _expression();
+  ValueType _binary(ValueType left_type);
+  ValueType _expr();
   ValueType _grouping();
+  ValueType _identifier();
   ValueType _literal();
   ValueType _number();
   ValueType _string();
-  ValueType _stringify();
   ValueType _unary();
 
   // parse rules
@@ -86,6 +87,8 @@ private:
   void _error_at(TokenType token_type, const Token &token, const char *message);
   void _error_at_current(const char *message);
   void _error(const char *message);
+
+  void _synchronize();
 
   void _type_error(ValueType expected, ValueType value_t, const char *message);
 

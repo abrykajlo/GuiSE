@@ -1,5 +1,5 @@
 MAKE_SOURCES(GUISE_VM_SOURCES
-    H_CPP byte_code disassembler object vm
+    H_CPP byte_code object vm
     H opcode
 )
 

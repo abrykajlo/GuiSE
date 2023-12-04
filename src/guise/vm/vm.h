@@ -1,6 +1,7 @@
 #pragma once
 
 #include <guise/compiler/types.h>
+#include <guise/debug.h>
 
 #define STACK_MAX 256
 #define FRAMES_MAX 64
@@ -13,12 +14,10 @@ enum class InterpretResult { Ok, CompileError, RuntimeError };
 
 struct CallFrame {
   const uint8_t *ip = nullptr;
-  const Value *fp = nullptr;
+  Value *fp = nullptr;
 };
 
 struct Registers {
-  const uint8_t *ip = nullptr;       // instruction pointer
-  Value *fp = nullptr;               // frame pointer
   Value *sp = nullptr;               // stack pointer
   CallFrame *cf = nullptr;           // call frame
   Value va;                          // a register
@@ -28,17 +27,21 @@ struct Registers {
 
 class VM {
 public:
-  InterpretResult Run();
+  VM();
 
+  InterpretResult Run();
+  InterpretResult RunGlobal();
   InterpretResult Call(const char *function_name);
 
   void set_byte_code(const ByteCode &byte_code);
 
 private:
   template <typename T> inline T _read() { return static_cast<T>(_read()); }
-  inline uint8_t _read() { return *_regs.ip++; }
+  inline uint8_t _read() {
+    GUISE_ASSERT(_regs.cf != nullptr)
+    return *_regs.cf->ip++;
+  }
 
-  void _reset();
   void _push(Value value);
   Value _pop();
 

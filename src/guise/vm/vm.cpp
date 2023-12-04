@@ -28,6 +28,11 @@ inline Bool op_or(Bool a, Bool b) { return a || b; }
 inline Bool op_and(Bool a, Bool b) { return a && b; }
 } // namespace
 
+VM::VM() {
+  _regs.cf = _call_stack;
+  _regs.sp = _stack;
+}
+
 InterpretResult VM::Call(const char *function_name) {
   const uint8_t *ip = _byte_code->GetFunction(function_name);
   if (ip == nullptr) {
@@ -44,14 +49,9 @@ InterpretResult VM::Call(const char *function_name) {
   return result;
 }
 
-void GuiSE::VM::set_byte_code(const ByteCode &byte_code) {
-  _byte_code = &byte_code;
-  _regs.cf = _call_stack;
-  _regs.cf->ip = &_byte_code->get_byte_code()[0];
-}
+void VM::set_byte_code(const ByteCode &byte_code) { _byte_code = &byte_code; }
 
 InterpretResult VM::Run() {
-  _reset();
   for (;;) {
     OpCode op_code;
     switch (op_code = _read<OpCode>()) {
@@ -59,6 +59,21 @@ InterpretResult VM::Run() {
       const Value value = _byte_code->GetConstant(_read());
       _push(value);
     } break;
+    case OpCode::GetGlobal:
+      _push(_stack[_read()]);
+      break;
+    case OpCode::GetLocal:
+      _push(_regs.cf->fp[_read()]);
+      break;
+    case OpCode::SetGlobal:
+        _stack[_read()] = _pop();
+        break;
+    case OpCode::SetLocal:
+        _regs.cf->fp[_read()] = _pop();
+        break;
+    case OpCode::Pop:
+        _pop();
+        break;
     case OpCode::Add:
       _binary_op<&Value::num>(op_plus);
       break;
@@ -103,6 +118,8 @@ InterpretResult VM::Run() {
       break;
     case OpCode::Return:
       return InterpretResult::Ok;
+    case OpCode::Global:
+      return InterpretResult::Ok;
     case OpCode::NoOp:
       return InterpretResult::Ok;
 #ifdef GUISE_DEBUG
@@ -114,11 +131,26 @@ InterpretResult VM::Run() {
   }
 }
 
-GuiSE::VM::VM()
-{
+InterpretResult VM::RunGlobal() {
+  _regs.cf->ip = (*_byte_code)[0];
+  OpCode last_op_code = OpCode::Global;
+  while (last_op_code != OpCode::NoOp) {
+    const OpCode op_code = _read<OpCode>();
+    switch (op_code) {
+    case OpCode::Global:
+      Run();
+      break;
+    case OpCode::Constant:
+    case OpCode::TypeArg:
+    case OpCode::GetGlobal:
+    case OpCode::GetLocal:
+      _read();
+      break;
+    }
+    last_op_code = static_cast<OpCode>(*(_regs.cf->ip - 1));
+  }
+  return InterpretResult();
 }
-
-void VM::_reset() { _regs.sp = _stack; }
 
 void VM::_push(Value value) {
   *_regs.sp = value;

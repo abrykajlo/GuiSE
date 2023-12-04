@@ -16,6 +16,11 @@ const char *expect_num_right_operand = "Expect num type right operand.";
 
 const char *expect_bool_left_operand = "Expect bool type left operand.";
 const char *expect_bool_right_operand = "Expect bool type right operand.";
+
+const char* semi_colon_after_statment = "Expect ';' after statement.";
+
+const char *identifier_bound = "Identifier already bound to.";
+const char *identifier_not_bound = "Identifier is not bound to.";
 } // namespace
 
 void Parser::_advance() {
@@ -31,7 +36,9 @@ void Parser::_advance() {
   }
 }
 
-bool Parser::_check(TokenType token_type) { return _curr_token_type == token_type; }
+bool Parser::_check(TokenType token_type) {
+  return _curr_token_type == token_type;
+}
 
 void Parser::_consume(TokenType token_type, const char *message) {
   if (_curr_token_type == token_type) {
@@ -71,6 +78,8 @@ Parser::ParsePrefixFn Parser::_get_prefix_rule(TokenType token_type) const {
     return &Parser::_grouping;
   case TokenType::String:
     return &Parser::_string;
+  case TokenType::Identifier:
+    return &Parser::_identifier;
   }
 
   return nullptr;
@@ -130,94 +139,94 @@ ValueType Parser::_parse_precedence(Precedence prec) {
   return type;
 }
 
-ValueType Parser::_binary(ValueType left_t) {
+ValueType Parser::_binary(ValueType left_type) {
   TokenType op_token_type = _prev_token_type;
   const InfixRule &rule = _get_infix_rule(op_token_type);
-  ValueType right_t = _parse_precedence(
+  ValueType right_type = _parse_precedence(
       static_cast<Precedence>(static_cast<int>(rule.prec) + 1));
 
-  ValueType expected_t = ValueType::Invalid;
-  ValueType return_t = ValueType::Invalid;
+  ValueType expected_type = ValueType::Invalid;
+  ValueType return_type = ValueType::Invalid;
   switch (op_token_type) {
   case TokenType::Plus:
-    expected_t = ValueType::Num;
+    expected_type = ValueType::Num;
     _emit_byte(OpCode::Add);
-    return_t = ValueType::Num;
+    return_type = ValueType::Num;
     break;
   case TokenType::Minus:
-    expected_t = ValueType::Num;
+    expected_type = ValueType::Num;
     _emit_byte(OpCode::Negate);
     _emit_byte(OpCode::Add);
-    return_t = ValueType::Num;
+    return_type = ValueType::Num;
     break;
   case TokenType::Star:
-    expected_t = ValueType::Num;
+    expected_type = ValueType::Num;
     _emit_byte(OpCode::Multiply);
-    return_t = ValueType::Num;
+    return_type = ValueType::Num;
     break;
   case TokenType::Slash:
-    expected_t = ValueType::Num;
+    expected_type = ValueType::Num;
     _emit_byte(OpCode::Divide);
-    return_t = ValueType::Num;
+    return_type = ValueType::Num;
     break;
   case TokenType::BangEqual:
-    expected_t = ValueType::Num;
+    expected_type = ValueType::Num;
     _emit_byte(OpCode::Equal);
     _emit_byte(OpCode::Not);
-    return_t = ValueType::Bool;
+    return_type = ValueType::Bool;
     break;
   case TokenType::EqualEqual:
-    expected_t = ValueType::Num;
+    expected_type = ValueType::Num;
     _emit_byte(OpCode::Equal);
-    return_t = ValueType::Bool;
+    return_type = ValueType::Bool;
     break;
   case TokenType::Greater:
-    expected_t = ValueType::Num;
+    expected_type = ValueType::Num;
     _emit_byte(OpCode::Greater);
-    return_t = ValueType::Bool;
+    return_type = ValueType::Bool;
     break;
   case TokenType::GreaterEqual:
-    expected_t = ValueType::Num;
+    expected_type = ValueType::Num;
     _emit_byte(OpCode::Less);
     _emit_byte(OpCode::Not);
-    return_t = ValueType::Bool;
+    return_type = ValueType::Bool;
     break;
   case TokenType::Less:
-    expected_t = ValueType::Num;
+    expected_type = ValueType::Num;
     _emit_byte(OpCode::Less);
-    return_t = ValueType::Bool;
+    return_type = ValueType::Bool;
     break;
   case TokenType::LessEqual:
-    expected_t = ValueType::Num;
+    expected_type = ValueType::Num;
     _emit_byte(OpCode::Greater);
     _emit_byte(OpCode::Not);
-    return_t = ValueType::Bool;
+    return_type = ValueType::Bool;
     break;
   case TokenType::Or:
-    expected_t = ValueType::Bool;
+    expected_type = ValueType::Bool;
     _emit_byte(OpCode::Or);
-    return_t = ValueType::Bool;
+    return_type = ValueType::Bool;
     break;
   case TokenType::And:
-    expected_t = ValueType::Bool;
+    expected_type = ValueType::Bool;
     _emit_byte(OpCode::And);
-    return_t = ValueType::Bool;
+    return_type = ValueType::Bool;
     break;
   }
 
   const char *expect_left_message = nullptr;
   const char *expect_right_message = nullptr;
-  if (expected_t == ValueType::Bool) {
+  if (expected_type == ValueType::Bool) {
     expect_left_message = expect_bool_left_operand;
     expect_right_message = expect_bool_right_operand;
-  } else if (expected_t == ValueType::Num) {
+  } else if (expected_type == ValueType::Num) {
     expect_left_message = expect_num_left_operand;
     expect_right_message = expect_num_right_operand;
   }
-  _type_error(expected_t, left_t, expect_left_message);
-  _type_error(expected_t, right_t, expect_right_message);
+  _type_error(expected_type, left_type, expect_left_message);
+  _type_error(expected_type, right_type, expect_right_message);
 
-  return return_t;
+  return return_type;
 }
 
 Parser::Parser(Scanner &scanner, ByteCode &byte_code)
@@ -226,14 +235,16 @@ Parser::Parser(Scanner &scanner, ByteCode &byte_code)
 }
 
 bool Parser::Parse() {
+  _emit_byte(OpCode::Global);
   while (!_match(TokenType::Eof)) {
     _global_declaration();
   }
+  _emit_byte(OpCode::NoOp);
 
   return !_had_error;
 }
 
-bool Parser::_identifier(std::string &identifier) {
+bool Parser::_match_identifier(std::string &identifier) {
   if (_match(TokenType::Identifier)) {
     identifier = std::string(_prev_token.start, _prev_token.length);
     return true;
@@ -262,19 +273,39 @@ ValueType Parser::_type_specifier() {
 
 void Parser::_declaration() {
   std::string identifier;
-  if (_identifier(identifier)) {
+  if (_match_identifier(identifier)) {
     if (_match(TokenType::Colon)) {
       ValueType type_spec = _type_specifier();
       _var_declaration(identifier, type_spec);
-      return;
     }
+    else if (_match(TokenType::Equal)) {
+        bool is_global = false;
+        const VarBinding* var_binding = _scope_stack.FindVar(identifier, is_global);
+        if (var_binding != nullptr) {
+            ValueType expr_type = _expr();
+            _type_error(var_binding->get_type(), expr_type, "Can't assign type to variable.");
+            _emit_byte(is_global ? OpCode::SetGlobal : OpCode::SetLocal);
+            _emit_byte(var_binding->get_offset());
+            _emit_byte(OpCode::Pop);
+            _consume(TokenType::SemiColon, semi_colon_after_statment);
+        }
+        else {
+            _error("Cannot assign to unbound variable.");
+        }
+    }
+  } else {
+    _stmt();
   }
-  _statement();
+
+  if (_panic_mode)
+    _synchronize();
 }
 
-void Parser::_var_declaration(const std::string &identifier,
-                              ValueType type) {
-  ValueType expr_type = _expression();
+void Parser::_var_declaration(std::string &identifier, ValueType type) {
+  if (!_scope_stack.AddVar(identifier, type)) {
+    _error_at_current(identifier_bound);
+  }
+  ValueType expr_type = _expr();
   _type_error(type, expr_type,
               "Incorrect expression type when initializing variable.");
   _consume(TokenType::SemiColon, "Expect ';'.");
@@ -282,55 +313,108 @@ void Parser::_var_declaration(const std::string &identifier,
 
 void Parser::_global_declaration() {
   std::string identifier;
-  if (!_identifier(identifier)) {
+  if (!_match_identifier(identifier)) {
     _error_at_current("Expect identifier.");
   }
   _consume(TokenType::Colon, "Expect ':'.");
+
+  // parse params: id : n int : m num...
+  std::vector<Param> params;
+
+  // parse binding type
   if (_match(TokenType::Fn)) {
-    _fn_declaration(identifier);
-  } else {
-    _error_at_current("Expect global declaration.");
+    _fn_declaration(identifier, params);
+  } else if (ValueType type = _type_specifier(); type != ValueType::Void) {
+    _var_declaration(identifier, type);
   }
+
+  if (_panic_mode)
+    _synchronize();
 }
 
-void Parser::_fn_declaration(const std::string &identifier) {
-  _byte_code->AddFunction(identifier);
+void Parser::_fn_declaration(std::string &identifier,
+                             std::vector<Param> &params) {
+  _emit_byte(OpCode::Global); // denote end of previous global scope
+  const Int fn_ptr = _byte_code->Length();
+  const uint8_t constant = _make_constant(fn_ptr);
+  if (!_scope_stack.AddFn(identifier, constant, params, ValueType::Void)) {
+    _error(identifier_bound);
+  }
+  _scope_stack.PushFnScope();
+  _byte_code->AddFunction(identifier, fn_ptr);
   _consume(TokenType::OpenBrace, "Expect '{'.");
   while (!_match(TokenType::CloseBrace)) {
     _declaration();
   }
   _emit_byte(OpCode::Return);
+  _scope_stack.Pop();
+  _emit_byte(OpCode::Global); // denote start of next global scope
 }
 
 void Parser::_type_declaration() {}
 
 void Parser::_cmpt_declaration() {}
 
-void Parser::_statement() {
+void Parser::_stmt() {
   if (_match(TokenType::Log)) {
-    _log_statement();
+    _log_stmt();
+  }
+  else {
+      _expr_stmt();
   }
 }
 
-void Parser::_log_statement() {
-  ValueType print_type = _expression();
+void Parser::_expr_stmt()
+{
+    _expr();
+    _emit_byte(OpCode::Pop);
+    _consume(TokenType::SemiColon, semi_colon_after_statment);
+}
+
+void Parser::_log_stmt() {
+  ValueType print_type = _expr();
   if (print_type == ValueType::Void) {
     _error("Cannot print void value.");
   }
-  _consume(TokenType::SemiColon, "Expect ';' after value.");
+  _consume(TokenType::SemiColon, semi_colon_after_statment);
   _emit_byte(OpCode::TypeArg);
   _emit_byte(print_type);
   _emit_byte(OpCode::Log);
 }
 
-ValueType Parser::_expression() {
+ValueType Parser::_expr() {
   return _parse_precedence(Precedence::Assignment);
 }
 
 ValueType Parser::_grouping() {
-  ValueType type = _expression();
+  ValueType type = _expr();
   _consume(TokenType::CloseParen, "Expect ')' after expression.");
   return type;
+}
+
+ValueType Parser::_identifier() {
+  bool is_global = false;
+  std::string identifier(_prev_token.start, _prev_token.length);
+  const FnBinding *fn_binding = _scope_stack.FindFn(identifier);
+  if (fn_binding != nullptr) {
+    return fn_binding->get_return_type();
+  }
+
+  const VarBinding *var_binding = _scope_stack.FindVar(identifier, is_global);
+  if (var_binding != nullptr) {
+    if (_match(TokenType::Equal)) {
+       ValueType expr_type = _expr();
+       _type_error(var_binding->get_type(), expr_type, "Can't assign type to variable.");
+      _emit_byte(is_global ? OpCode::SetGlobal : OpCode::SetLocal);
+    } else {
+      _emit_byte(is_global ? OpCode::GetGlobal : OpCode::GetLocal);
+    }
+    _emit_byte(var_binding->get_offset());
+    return var_binding->get_type();
+  }
+
+  _error(identifier_not_bound);
+  return ValueType::Invalid;
 }
 
 ValueType Parser::_literal() {
@@ -356,8 +440,6 @@ ValueType Parser::_string() {
 
   return ValueType::Str;
 }
-
-ValueType Parser::_stringify() { return ValueType(); }
 
 ValueType Parser::_unary() {
   TokenType op_token_type = _prev_token_type;
@@ -400,6 +482,9 @@ uint8_t Parser::_make_constant(Value value) {
 
 void Parser::_error_at(TokenType token_type, const Token &token,
                        const char *message) {
+  if (_panic_mode)
+    return;
+  _panic_mode = true;
   fprintf(stderr, "[line %d] Error", token.line);
 
   if (token_type == TokenType::Eof) {
@@ -420,4 +505,15 @@ void Parser::_error_at_current(const char *message) {
 
 void Parser::_error(const char *message) {
   _error_at(_prev_token_type, _prev_token, message);
+}
+
+void Parser::_synchronize() {
+  _panic_mode = false;
+  while (_curr_token_type != TokenType::Eof) {
+    if (_prev_token_type == TokenType::SemiColon)
+      return;
+    if (_prev_token_type == TokenType::CloseBrace)
+      return;
+    _advance();
+  }
 }

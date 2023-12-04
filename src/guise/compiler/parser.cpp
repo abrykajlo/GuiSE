@@ -17,7 +17,7 @@ const char *expect_num_right_operand = "Expect num type right operand.";
 const char *expect_bool_left_operand = "Expect bool type left operand.";
 const char *expect_bool_right_operand = "Expect bool type right operand.";
 
-const char* semi_colon_after_statment = "Expect ';' after statement.";
+const char *semi_colon_after_statment = "Expect ';' after statement.";
 
 const char *identifier_bound = "Identifier already bound to.";
 const char *identifier_not_bound = "Identifier is not bound to.";
@@ -277,21 +277,21 @@ void Parser::_declaration() {
     if (_match(TokenType::Colon)) {
       ValueType type_spec = _type_specifier();
       _var_declaration(identifier, type_spec);
-    }
-    else if (_match(TokenType::Equal)) {
-        bool is_global = false;
-        const VarBinding* var_binding = _scope_stack.FindVar(identifier, is_global);
-        if (var_binding != nullptr) {
-            ValueType expr_type = _expr();
-            _type_error(var_binding->get_type(), expr_type, "Can't assign type to variable.");
-            _emit_byte(is_global ? OpCode::SetGlobal : OpCode::SetLocal);
-            _emit_byte(var_binding->get_offset());
-            _emit_byte(OpCode::Pop);
-            _consume(TokenType::SemiColon, semi_colon_after_statment);
-        }
-        else {
-            _error("Cannot assign to unbound variable.");
-        }
+    } else if (_match(TokenType::Equal)) {
+      bool is_global = false;
+      const VarBinding *var_binding =
+          _scope_stack.FindVar(identifier, is_global);
+      if (var_binding != nullptr) {
+        ValueType expr_type = _expr();
+        _type_error(var_binding->get_type(), expr_type,
+                    "Can't assign type to variable.");
+        _emit_byte(is_global ? OpCode::SetGlobal : OpCode::SetLocal);
+        _emit_byte(var_binding->get_offset());
+        _emit_byte(OpCode::Pop);
+        _consume(TokenType::SemiColon, semi_colon_after_statment);
+      } else {
+        _error("Cannot assign to unbound variable.");
+      }
     }
   } else {
     _stmt();
@@ -358,17 +358,15 @@ void Parser::_cmpt_declaration() {}
 void Parser::_stmt() {
   if (_match(TokenType::Log)) {
     _log_stmt();
-  }
-  else {
-      _expr_stmt();
+  } else {
+    _expr_stmt();
   }
 }
 
-void Parser::_expr_stmt()
-{
-    _expr();
-    _emit_byte(OpCode::Pop);
-    _consume(TokenType::SemiColon, semi_colon_after_statment);
+void Parser::_expr_stmt() {
+  _expr();
+  _emit_byte(OpCode::Pop);
+  _consume(TokenType::SemiColon, semi_colon_after_statment);
 }
 
 void Parser::_log_stmt() {
@@ -382,9 +380,7 @@ void Parser::_log_stmt() {
   _emit_byte(OpCode::Log);
 }
 
-ValueType Parser::_expr() {
-  return _parse_precedence(Precedence::Assignment);
-}
+ValueType Parser::_expr() { return _parse_precedence(Precedence::Assignment); }
 
 ValueType Parser::_grouping() {
   ValueType type = _expr();
@@ -403,8 +399,9 @@ ValueType Parser::_identifier() {
   const VarBinding *var_binding = _scope_stack.FindVar(identifier, is_global);
   if (var_binding != nullptr) {
     if (_match(TokenType::Equal)) {
-       ValueType expr_type = _expr();
-       _type_error(var_binding->get_type(), expr_type, "Can't assign type to variable.");
+      ValueType expr_type = _expr();
+      _type_error(var_binding->get_type(), expr_type,
+                  "Can't assign type to variable.");
       _emit_byte(is_global ? OpCode::SetGlobal : OpCode::SetLocal);
     } else {
       _emit_byte(is_global ? OpCode::GetGlobal : OpCode::GetLocal);

@@ -66,14 +66,14 @@ InterpretResult VM::Run() {
       _push(_regs.cf->fp[_read()]);
       break;
     case OpCode::SetGlobal:
-        _stack[_read()] = _pop();
-        break;
+      _stack[_read()] = _pop();
+      break;
     case OpCode::SetLocal:
-        _regs.cf->fp[_read()] = _pop();
-        break;
+      _regs.cf->fp[_read()] = _pop();
+      break;
     case OpCode::Pop:
-        _pop();
-        break;
+      _pop();
+      break;
     case OpCode::Add:
       _binary_op<&Value::num>(op_plus);
       break;

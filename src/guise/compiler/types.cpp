@@ -2,6 +2,23 @@
 
 #include <guise/vm/object.h>
 
+const char *GuiSE::type_string(ValueType type) {
+  switch (type) {
+  case ValueType::Invalid:
+    return "invalid";
+  case ValueType::Bool:
+    return "bool";
+  case ValueType::Num:
+    return "num";
+  case ValueType::Int:
+    return "int";
+  case ValueType::Str:
+    return "str";
+  case ValueType::Void:
+    return "void";
+  }
+}
+
 void GuiSE::log_value(ValueType type, Value value) {
   switch (type) {
   case ValueType::Bool:

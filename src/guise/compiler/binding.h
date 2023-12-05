@@ -25,16 +25,18 @@ private:
 };
 
 struct Param {
-  const std::string id;
+  const BindingId id;
   ValueType type;
 };
 
 class FnBinding {
 public:
-  FnBinding(int constant, std::vector<Param> &params, ValueType return_type);
+  FnBinding(int constant, const std::vector<Param> &params,
+            ValueType return_type);
 
+  inline const std::vector<Param> &get_params() const { return _params; }
+  inline int get_constant() const { return _constant; }
   inline ValueType get_return_type() const { return _return_type; }
-  inline int get_byte_offset() const { return _constant; }
 
 private:
   std::vector<Param> _params;
@@ -47,7 +49,7 @@ public:
   Scope();
   Scope(const Scope &scope);
 
-  bool AddVar(const BindingId &id, ValueType type);
+  void AddVar(const BindingId &id, ValueType type);
   const VarBinding *FindVar(const BindingId &id) const;
 
   using VarBindingMap = std::map<BindingId, VarBinding>;
@@ -62,9 +64,9 @@ private:
 
 class ScopeStack {
 public:
-  bool AddFn(const BindingId &id, int byte_offset, std::vector<Param> &params,
-             ValueType return_type);
-  bool AddVar(const BindingId &id, ValueType type);
+  bool AddFn(const BindingId &id, int byte_offset,
+             const std::vector<Param> &params, ValueType return_type);
+  void AddVar(const BindingId &id, ValueType type);
 
   const FnBinding *FindFn(const BindingId &id);
   const VarBinding *FindVar(const BindingId &id, bool &is_global) const;
@@ -75,18 +77,11 @@ public:
   void Pop();
 
 private:
-  inline bool _has_binding(const BindingId &id) const {
-    return _unique_ids.find(id) != _unique_ids.end();
-  }
-
-  inline void _add_binding(const BindingId &id) { _unique_ids.insert(id); }
-
   std::vector<Scope> _stack;
-  std::set<BindingId> _unique_ids;
 
   // global bindings
-  int _global_offset = 0;
   std::map<BindingId, FnBinding> _fn_bindings;
   std::map<BindingId, VarBinding> _var_bindings;
+  int _global_offset = 0;
 };
 } // namespace GuiSE

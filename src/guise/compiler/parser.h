@@ -34,21 +34,24 @@ private:
   bool _check(TokenType token_type);
   void _consume(TokenType token_type, const char *message);
   bool _match(TokenType token_type);
-  bool _match_identifier(std::string &identifier);
+  bool _match_id(std::string &identifier);
 
   // declarations
   ValueType _type_specifier();
   void _declaration();
   void _var_declaration(std::string &identifier, ValueType value_t);
   void _global_declaration();
-  void _fn_declaration(std::string &identifier, std::vector<Param> &params);
+  void _fn_declaration(std::string &identifier,
+                       const std::vector<Param> &params);
   void _type_declaration();
   void _cmpt_declaration();
 
   // statements
   void _stmt();
   void _expr_stmt();
+  void _id_stmt(); // assignment or function call
   void _log_stmt();
+  void _return_stmt();
 
   // expressions
   ValueType _binary(ValueType left_type);
@@ -100,6 +103,8 @@ private:
   TokenType _prev_token_type = TokenType::Invalid;
   bool _had_error = false;
   bool _panic_mode = false;
+  ValueType _return_type = ValueType::Invalid;
+  bool _last_stmt_returned = false;
   ScopeStack _scope_stack;
 };
 } // namespace GuiSE

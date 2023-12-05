@@ -40,7 +40,7 @@ InterpretResult VM::Call(const char *function_name) {
     return InterpretResult::RuntimeError;
   }
 
-  _regs.cf++;
+  _regs.sp++;
   _regs.cf->fp = _regs.sp;
   _regs.cf->ip = ip;
 
@@ -70,6 +70,17 @@ InterpretResult VM::Run() {
       break;
     case OpCode::SetLocal:
       _regs.cf->fp[_read()] = _pop();
+      break;
+    case OpCode::Call: {
+      const Int fn_ptr = _pop().int_;
+      const int arg_count = _read();
+      _regs.sp -= arg_count;
+      _regs.cf++;
+      _regs.cf->ip = (*_byte_code)[fn_ptr];
+      _regs.cf->fp = _regs.sp;
+    } break;
+    case OpCode::StackUp:
+      _regs.sp++;
       break;
     case OpCode::Pop:
       _pop();
@@ -117,7 +128,11 @@ InterpretResult VM::Run() {
       _regs.tr = _read<ValueType>();
       break;
     case OpCode::Return:
-      return InterpretResult::Ok;
+      _regs.cf->fp[-1] = _pop();
+      if (_regs.cf == _call_stack)
+        return InterpretResult::Ok;
+      _regs.cf--;
+      break;
     case OpCode::Global:
       return InterpretResult::Ok;
     case OpCode::NoOp:

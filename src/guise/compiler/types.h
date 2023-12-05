@@ -44,5 +44,7 @@ struct Value {
   Value(Str *str) : str(str) {}
 };
 
+const char *type_string(ValueType type);
+
 void log_value(ValueType type, Value value);
 } // namespace GuiSE

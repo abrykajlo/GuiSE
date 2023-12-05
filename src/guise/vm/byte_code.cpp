@@ -29,7 +29,7 @@ Value ByteCode::GetConstant(int index) const { return _constants[index]; }
 
 size_t ByteCode::Length() const { return _byte_code.size(); }
 
-const uint8_t *GuiSE::ByteCode::operator[](const size_t i) const {
+const uint8_t *ByteCode::operator[](const size_t i) const {
   if (i >= Length()) {
     return nullptr;
   }

@@ -25,6 +25,5 @@ private:
   std::vector<uint8_t> _byte_code;
   std::vector<Value> _constants;
   std::map<std::string, int> _functions;
-  int _global_count = 0;
 };
 } // namespace GuiSE
